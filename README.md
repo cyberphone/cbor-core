@@ -23,11 +23,11 @@ https://datatracker.ietf.org/doc/draft-rundgren-cbor-core/
 
 ## Examples
 
-The following simple examples are supposed to give you an idea of how `CBOR::Core` is to be used.
+The following _simple_ examples are supposed to give you an idea of how `CBOR::Core` is to be used.
 Although the examples build on a JavaScript implementation,
 other implementations are supposed to be quite similar with respect to usage.
 
-As can be seen from the examples, there is rarely any need for developers to be experts in low-level details like CBOR serialization.
+As can be seen from the examples, there is rarely any need for developers to become experts in low-level details like CBOR serialization.
 
 ### Encoding
 
@@ -104,6 +104,7 @@ in the [Encoding&nbsp;Example](#encoding-example) were swapped, the generated CB
 |Python 3|https://github.com/cyberphone/CBOR.py#cborpy|
 
 Updated: 2026-02-20
+
 
 
 
