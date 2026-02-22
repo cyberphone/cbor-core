@@ -1,0 +1,2035 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<?xml-model href="rfc7991bis.rnc"?> 
+
+<!DOCTYPE rfc [
+  <!ENTITY nbsp    "&#160;">
+  <!ENTITY zwsp   "&#8203;">
+  <!ENTITY nbhy   "&#8209;">
+  <!ENTITY wj     "&#8288;">
+  <!ENTITY pm     "&#xb1;">
+]>
+
+<rfc
+  xmlns:xi="http://www.w3.org/2001/XInclude"
+  category="info"
+  docName="draft-rundgren-cbor-ces-00"
+  ipr="trust200902"
+  obsoletes=""
+  updates=""
+  tocDepth="4"
+  submissionType="IETF"
+  xml:lang="en"
+  version="3">
+
+  <front>
+    <title>CBOR&#x2009;:&#x2009;:&#x2009;CES - CBOR Embedded Signature</title>
+
+    <seriesInfo name="Internet-Draft" value="draft-rundgren-cbor-ces-00"/>
+   
+    <author fullname="Anders Rundgren" initials="A." surname="Rundgren" role="editor">
+        <organization>Independent</organization>
+        <address>
+            <postal>
+                <city>Montpellier</city>
+                <country>France</country>
+            </postal>
+            <email>anders.rundgren.net@gmail.com</email>
+            <uri>https://www.linkedin.com/in/andersrundgren/</uri>
+        </address>
+    </author>
+   
+    <date year="2025"/>
+
+    <area>Application</area>
+    <workgroup>Internet Engineering Task Force</workgroup>
+
+    <keyword>CBOR</keyword>
+    <keyword>Deterministic</keyword>
+    <keyword>Encoding</keyword>
+    <keyword>Cryptography</keyword>
+    <keyword>Embedded</keyword>
+    <keyword>Signature</keyword>
+
+    <abstract>
+      <t>
+This document defines CES,
+a simple signature scheme for CBOR (RFC 8949).
+Unlike COSE (RFC 9052), CES doos not require CBOR data to be signed
+to be wrapped in byte stringto "raw" (non-wrapped) CBOR data,
+deterministic encoding is mandated.
+Furthermore, the document outlines API features for
+manipulating CBOR data in a secure manner.
+This document mainly targets CBOR tool developers.
+      </t>
+    </abstract>
+ 
+  </front>
+
+  <middle>
+    
+    <section>
+      <name>Introduction</name>
+          <t>
+The <tt>CBOR::Core</tt> specification is based on CBOR <xref target="RFC8949"/>.
+While there are different ways you can encode certain CBOR objects,
+this is non-trivial to support in general purpose platform-based tools,
+not to mention the limited utility of such measures.
+To cope with this, <tt>CBOR::Core</tt> defines a specific (non-variant) encoding scheme,
+aka &quot;Deterministic Encoding&quot;.  The selected encoding
+scheme is believed to be <em>compatible</em> with most existing
+systems using CBOR.
+See also <xref target="backward.compatibility"/>.
+        </t>
+    <t>
+<tt>CBOR::Core</tt> is intended to be agnostic with respect to programming
+languages and platforms.
+        </t>
+        <t>
+By combining the compact binary representation and the rich set of
+data types offered by CBOR, with a deterministic encoding scheme,
+<tt>CBOR::Core</tt> could for <em>new designs</em>, serve as a viable alternative
+to JSON <xref target="RFC8259"/>.
+Although the mandated encoding scheme is deployable in
+<xref target="CONSTRAINED"/> environments, the primary target is rather
+general-purpose computing platforms like mobile phones and Web servers.
+    </t>
+        <t>
+However, for unleashing the full power of deterministic encoding,
+the ability to perform cryptographic operations on "raw" (non-wrapped)
+CBOR data, compliant <tt>CBOR::Core</tt> tools need additional functionality.
+See also <xref target="embedded.signatures"/>.
+        </t>
+        <section anchor="design.goals">
+        <name>Design Goals</name>
+        <t>
+The primary goal with this specification, is providing a foundation
+for CBOR tools that enable application developers to use CBOR without requiring
+insights in low-level details like encoding.  In most cases, it should be sufficient
+to consult a list of supported data types.  See also <xref target="protocol.primitives"/>.
+        </t>
+        <t>
+<xref target="detailed.description"/> contains the
+actual specification.
+        </t>
+        </section>
+
+      <section>
+        <name>Requirements Language</name>
+        <t>The key words "MUST", "MUST NOT", "REQUIRED", "SHALL",
+          "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT
+          RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
+          interpreted as described in BCP 14 <xref target="RFC2119"/>
+          <xref target="RFC8174"/> when, and only when, they appear in
+          all capitals, as shown here.</t>
+      </section>
+
+      <section>
+        <name>Common Definitions</name>
+<ul>
+<li>This document uses the conventions defined in CDDL <xref target="RFC8610"/> 
+for expressing the type of CBOR <xref target="RFC8949"/> data items.</li>
+<li>Examples showing CBOR data, are expressed in "diagnostic notation"
+(<xref target="diagnostic.notation"/>).</li>
+<li>The term "CBOR&nbsp;object" is equivalent to "CBOR&nbsp;data&nbsp;item"
+used in <xref target="RFC8949"/>.</li>
+</ul>
+      </section>
+
+    </section>
+    
+    <section anchor="detailed.description">
+      <name>Detailed Description</name>
+      <t>This section describes the three pillars that <tt>CBOR::Core</tt> relies on.</t>
+
+      <section anchor="core.objects">
+        <name>Supported CBOR Objects</name>
+        <t>The following table shows the set of CBOR objects that compliant
+        <tt>CBOR::Core</tt> implementations MUST support:</t>
+<table align="left">
+<name>Supported CBOR Objects</name>
+<thead>
+  <tr><th align="center">CDDL</th>
+  <th align="center">Comment</th></tr>
+</thead>
+<tbody>
+<tr><td align="center"><tt>int</tt></td><td>Integer</td></tr>
+<tr><td align="center"><tt>bigint</tt></td><td>Big integer</td></tr>
+<tr><td align="center"><tt>float</tt></td><td>16-, 32-, and 64-bit <xref target="IEEE754"/> floating-point numbers</td></tr>
+<tr><td align="center"><tt>tstr</tt></td><td>Text string encoded as UTF-8 <xref target="RFC3629"/></td></tr>
+<tr><td align="center"><tt>bstr</tt></td><td>Byte string</td></tr>
+<tr><td align="center"><tt>bool</tt></td><td>Boolean <tt>true</tt> and <tt>false</tt></td></tr>
+<tr><td align="center"><tt>null</tt></td><td>Object representing <tt>null</tt></td></tr>
+<tr><td align="center"><tt>[]</tt></td><td>Array</td></tr>
+<tr><td align="center"><tt>{}</tt></td><td>Map</td></tr>
+<tr><td align="center"><tt>#6.nnn(type)</tt></td><td>Tagged objects</td></tr>
+<tr><td align="center"><tt>#7.nnn</tt></td><td>Simple values</td></tr>
+</tbody>
+</table>
+        <t>
+<em>Application-specific</em> implementations may (of course) only have to support the
+<tt>CBOR::Core</tt> objects required by the targeted application(s).
+        </t>
+
+      </section>
+      
+      <section anchor="core.encoding">
+        <name>Deterministic Encoding Scheme</name>
+        <t>
+In <tt>CBOR::Core</tt> deterministic encoding is <em>mandatory</em>.
+The encoding scheme adheres to
+<xref section="4.2.1" sectionFormat="of" target="RFC8949"/> and
+<xref section="4.2.2" sectionFormat="of" target="RFC8949"/>,
+but adds a few constraints (denoted by RFC+), where the RFC offers choices.
+The following list contains a summary of the <tt>CBOR::Core</tt> deterministic encoding rules:
+        </t>
+      <ul>
+        <li>
+        <t>
+RFC: Integers, represented by the <tt>int</tt> and
+<tt>bigint</tt> types, MUST use the <tt>int</tt>
+type if the value is between <tt>-2<sup>64</sup></tt>
+and <tt>2<sup>64</sup>-1</tt>,
+otherwise the <tt>bigint</tt> type MUST be used.
+Shortest representation (in <xref target="RFC8949"/> referred to as "Preferred Serialization"),
+MUST be applied to both integer variants.
+<xref target="core.integers"/>
+contains a list of integer sample values and their expected encoding.
+        </t>
+<t>
+Note that the shortest representation
+MUST also be applied to string lengths, array/map counts, and tag numbers.
+</t>
+        </li>
+        <li>
+RFC+: Floating-point numbers MUST use the shortest
+<xref target="IEEE754"/> variant (<tt>64</tt>, <tt>32</tt>,
+or <tt>16</tt> bits) that
+preserves the precision of the original value, including subnormal values.
+<xref target="core.floats"/>
+contains a list of floating-point sample values and their expected encoding.
+        </li>
+        <li>
+<t>RFC+: Non-finite numbers (<xref target="api.non-finite-numbers"/>)
+MUST use the shortest
+<xref target="IEEE754"/> variant (<tt>64</tt>, <tt>32</tt>,
+or <tt>16</tt> bits) that preserves the original value.
+<xref target="non-finite.encoder"/> contains a sample encoder in JavaScript, while
+<xref target="core.floats"/> and <xref target="core.misc"/>
+contain a few non-finite sample values and their expected encoding.</t>
+        </li>
+        <li>
+RFC+: Floating-point and integer objects MUST be treated as <em>distinct types</em>
+regardless of their numeric value. This is compliant with
+"Rule&nbsp;2" in <xref section="4.2.2" sectionFormat="of" target="RFC8949"/>.
+        </li>
+        <li>
+RFC: Map keys MUST be sorted in the bytewise lexicographic
+order of their deterministic encoding.
+Duplicate keys MUST be rejected.
+        </li>
+        <li>
+RFC+: Since CBOR encodings according to this specification
+maintain uniqueness, there are no additional
+tests needed in order to determine map key equivalence.
+As an (extreme) example, the floating-point numbers <tt>0.0</tt> and
+<tt>-0.0</tt>, the integer number <tt>0</tt>, a <tt>NaN</tt>, and an empty <tt>map</tt> <tt>{}</tt>,
+could represent the distinct keys
+<tt>f90000</tt>, <tt>f98000</tt>, <tt>00</tt>, <tt>f97e00</tt>, and <tt>a0</tt> respectively.
+        </li>
+        <li>
+RFC: Indefinite-length objects MUST be rejected.
+        </li>
+      </ul>
+      </section>
+      
+      <section anchor="implementation">
+        <name>Implementation Considerations</name>
+        <t>In <tt>CBOR::Core</tt> there are three distinguishable levels:</t>
+      <dl newline="true">
+        <dt>Encoding level:</dt>
+        <dd>"Wire format" as described in <xref target="core.encoding"/>.</dd>
+        <dt>Encoder/decoder level:</dt>
+        <dd>This section.</dd>
+        <dt>Application level:</dt>
+        <dd>
+Constraints on data imposed by <em>applications</em>,
+like limiting ISO DateTime objects to UTC notation, or requiring integers
+representing enumerations to be in a specific range, is <em>out-of-scope</em>
+for <tt>CBOR::Core</tt>.</dd>
+      </dl>
+        <section anchor="api.level.det">
+          <name>API Requirements</name>
+<t>
+Compliant <tt>CBOR::Core</tt> implementations MUST reject
+CBOR data not adhering to the deterministic encoding scheme.
+See also <xref target="backward.compatibility"/>.
+</t>
+<t>
+An important feature that deterministic encoding brings to the table is
+the ability to perform cryptographic operations on "raw" CBOR data.
+Turn to <xref target="embedded.signatures"/> for
+an example of an application depending on such features.
+However, to make this a reality as well as making it easy to
+manipulate CBOR objects, the following functionality MUST be
+provided by CBOR tools compliant with this specification:
+</t>
+<ul>
+ <li>
+  Decoded CBOR primitives MUST remain <em>immutable</em>, regardless if they are stand-alone
+  or being a part of a tagged object like
+  <tt>bigfloat</tt> (see <xref section="3.4.4" sectionFormat="of"  target="RFC8949"/>).
+  </li>
+   <li>
+  To support <em>variant</em> CBOR data,
+  it MUST be possible to find out the type of a CBOR object,
+  <em>before</em> it is referenced.
+  </li>
+  <li>
+  It MUST be possible to <em>add</em>, <em>delete</em>, and
+  <em>update</em> the contents of CBOR <tt>map</tt> and <tt>array</tt> objects,
+  of decoded CBOR data.
+  </li>
+  <li>
+  It MUST be possible to <em>reserialize</em> decoded CBOR data,
+  be it updated or not.
+  </li>
+  <li>
+  Irrespective of if CBOR data is decoded, updated, or created 
+  programmatically, deterministic encoding MUST be maintained.
+  </li>
+</ul>
+<t>
+<xref target="example.code"/> shows an example
+that <em>updates</em> and <em>reserializes</em> decoded CBOR data.
+</t>
+  <section anchor="api.vs.app.level">
+  <name>Application vs. Encoding Level Equivalence</name>
+<t>As a consequence of these rules, CBOR data and application / platform-level data,
+MUST be <em>separated</em> for cases where <em>reserialization</em>
+could present a problem.
+</t>
+<t>
+How this separation is accomplished is out of scope for this specification.
+However, <em>encapsulation</em> of CBOR data in <em>high-level</em>, and
+<em>self-rendering wrapper objects</em>, represents an established method,
+featured in similar tools for ASN.1.
+</t>
+<t>
+The following example, using the JavaScript <tt>Date</tt> object and <xref target="CBOR.JS"/>,
+highlights the difference between the application level and the encoding level:</t>
+<sourcecode name="Date example" type="cbor">
+<![CDATA[// Sample CBOR tstr object: "2025-03-02T13:08:55.0201+03:00"
+let cbor = CBOR.fromHex("781e323032352d30332d30325431333a30383a35352e303230312b30333a3030");
+let cborObject = CBOR.decode(cbor);
+
+// JavaScript Date only supports milliseconds and converts time to UTC
+console.log(cborObject.getDateTime().toISOString());  
+> 2025-03-02T10:08:55.020Z
+
+console.log(CBOR.toHex(cborObject.encode()));  // Reserialization returns identical CBOR data 
+> 781e323032352d30332d30325431333a30383a35352e303230312b30333a3030]]>
+</sourcecode>
+<t>
+As can be seen in the listing, at the <em>application</em> level, data may not always
+be 100% deterministic, while at the <em>encoding</em> level, data MUST remain intact.
+The only exception to this rule is if the data was received in a non-deterministic format.
+See also <xref target="backward.compatibility"/>.
+</t>
+</section>
+</section>
+
+        <section anchor="protocol.primitives">
+        <name>Protocol Primitives</name>
+        <t>
+To facilitate cross-platform <em>protocol interoperability</em>,
+implementers of <tt>CBOR::Core</tt> compatible tools SHOULD include <em>decoder</em>
+API support for the following primitive data types:
+        </t>
+<table align="left">
+<name>Protocol Primitives</name>
+<thead>
+  <tr>
+  <th align="center">CDDL</th>
+  <th align="center">Primitive</th>
+  <th align="center">Comment</th>
+  <th align="center">Notes</th>
+  </tr>
+</thead>
+<tbody>
+<tr>
+<td align="center"><tt>int</tt></td>
+<td align="center"><tt>Int8</tt></td>
+<td>8-bit signed integer</td>
+<td align="center">1</td>
+</tr>
+<tr>
+<td align="center"><tt>uint</tt></td>
+<td align="center"><tt>Uint8</tt></td>
+<td>8-bit unsigned integer</td>
+<td align="center">1</td>
+</tr>
+<tr>
+<td align="center"><tt>int</tt></td>
+<td align="center"><tt>Int16</tt></td>
+<td>16-bit signed integer</td>
+<td align="center">1</td>
+</tr>
+<tr>
+<td align="center"><tt>uint</tt></td>
+<td align="center"><tt>Uint16</tt></td>
+<td>16-bit unsigned integer</td>
+<td align="center">1</td>
+</tr>
+<tr>
+<td align="center"><tt>int</tt></td>
+<td align="center"><tt>Int32</tt></td>
+<td>32-bit signed integer</td>
+<td align="center">1</td>
+</tr>
+<tr>
+<td align="center"><tt>uint</tt></td>
+<td align="center"><tt>Uint32</tt></td>
+<td>32-bit unsigned integer</td>
+<td align="center">1</td>
+</tr>
+<tr>
+<td align="center"><tt>int</tt></td>
+<td align="center"><tt>Int64</tt></td>
+<td>64-bit signed integer</td>
+<td align="center">1, 3</td>
+</tr>
+<tr>
+<td align="center"><tt>uint</tt></td>
+<td align="center"><tt>Uint64</tt></td>
+<td>64-bit unsigned integer</td>
+<td align="center">1</td>
+</tr>
+<tr>
+<td align="center"><tt>int</tt></td>
+<td align="center"><tt>Int53</tt></td>
+<td>53-bit signed integer</td>
+<td align="center">2</td>
+</tr>
+<tr>
+<td align="center"><tt>integer</tt></td>
+<td align="center"><tt>BigInt</tt></td>
+<td>Integer of arbitrary size</td>
+<td align="center">4</td>
+</tr>
+<tr>
+<td align="center"><tt>float16</tt></td>
+<td align="center"><tt>Float16</tt></td>
+<td>16-bit floating-point number</td>
+<td align="center">5, 6</td>
+</tr>
+<tr>
+<td align="center"><tt>float16</tt>&nbsp;/ <tt>float32</tt></td>
+<td align="center"><tt>Float32</tt></td>
+<td>32-bit floating-point number</td>
+<td align="center">5, 6</td>
+</tr>
+<tr>
+<td align="center"><tt>float</tt></td>
+<td align="center"><tt>Float64</tt></td>
+<td>64-bit floating-point number</td>
+<td align="center">6</td>
+</tr>
+<tr>
+<td align="center"><tt>bool</tt></td>
+<td align="center"><tt>Boolean</tt></td>
+<td>Boolean</td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><tt>null</tt></td>
+<td align="center"><tt>Null</tt></td>
+<td>Null</td>
+<td align="center">7</td>
+</tr>
+<tr>
+<td align="center"><tt>#7.nnn</tt></td>
+<td align="center"><tt>Simple</tt></td>
+<td>Simple values</td>
+<td align="center">8</td>
+</tr>
+<tr>
+<td align="center"><tt>tstr</tt></td>
+<td align="center"><tt>String</tt></td>
+<td>Text string</td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><tt>bstr</tt></td>
+<td align="center"><tt>Bytes</tt></td>
+<td>Byte string</td>
+<td></td>
+</tr>
+<tr>
+<td align="center">See note</td>
+<td align="center"><tt>DateTime</tt></td>
+<td>Time object expressed as a text string</td>
+<td align="center">9</td>
+</tr>
+<tr>
+<td align="center">See note</td>
+<td align="center"><tt>EpochTime</tt></td>
+<td>Time object expressed as a number</td>
+<td align="center">9, 10</td>
+</tr>
+</tbody>
+</table>
+<ol>
+<li>
+<t>
+<tt>Int8</tt> - <tt>Uint64</tt> are modeled after the "C" language
+including their permitted ranges.
+Range testing MUST be performed.
+That is, a hypothetical <tt>getUint8()</tt> MUST reject numbers
+outside of <tt>0</tt> to <tt>255</tt>,
+whereas a hypothetical <tt>getInt8()</tt>,
+MUST reject numbers outside of <tt>-128</tt> to <tt>127</tt>.
+</t>
+</li>
+<li>
+<t>
+<tt>Int53</tt> is derived
+from the JavaScript <tt>Number</tt> type.  As an integer, values outside of
+<tt>Number.MIN_SAFE_INTEGER</tt> (<tt>-9007199254740991</tt>) to
+<tt>Number.MAX_SAFE_INTEGER</tt> (<tt>9007199254740991</tt>)
+MUST be rejected.
+</t>
+<t>
+<tt>Int53</tt> should be used with caution in cross-platform scenarios.
+</t>
+</li>
+<li>
+<t>Although CBOR major type 1 supports a wider range
+of negative values than offered by <tt>Int64</tt>, explicit use of this
+feature in protocols designed for cross-platform use, is NOT RECOMMENDED;
+it should be reserved for the unconstrained integer object, <tt>BigInt</tt>
+where it is a necessity.
+</t>
+</li>
+<li>
+<t>
+Note that a hypothetical <tt>getBigInt()</tt> MUST also accept CBOR <tt>int</tt>
+objects since <tt>int</tt> is used for integers that fit in
+CBOR major type 0 and 1 objects. 
+See also <xref target="core.integers"/> and <xref target="backward.compatibility"/>.
+</t>
+</li>
+<li>
+<t>
+Some platforms do not natively support <tt>float32</tt> and/or <tt>float16</tt>.
+In this case a hypothetical <tt>getFloat16()</tt> would
+need to use a bigger floating-point type for the return value.
+</t>
+<t>
+Note that a hypothetical <tt>getFloat16()</tt> MUST reject encountered
+<tt>Float32</tt> and <tt>Float64</tt> objects.  See also <xref target="backward.compatibility"/>.
+</t>
+</li>
+<li>
+<t>
+Floating-point numbers also include non-finite numbers. See also <xref target="api.non-finite-numbers"/>.
+</t>
+</li>
+<li>
+<t>
+Since a CBOR <tt>null</tt> typically represents the absence of a value,
+a decoder MUST provide a test-function, like <tt>isNull()</tt>.
+</t>
+</li>
+<li>
+<t>
+Simple values include the ranges <tt>0-23</tt> and <tt>32-255</tt>.
+Note that <tt>bool</tt> and <tt>null</tt> actually are simple values.
+</t>
+</li>
+<li>
+<t>
+Since CBOR lacks a native-level time object,
+<xref section="3.4" sectionFormat="of"  target="RFC8949"/>
+introduces two variants of time objects using the 
+CBOR tags <tt>0</tt> and <tt>1</tt>.
+The time objects SHOULD also be supported <em>without</em> the
+tag construct.
+</t>
+</li>
+<li>
+<t>
+<tt>EpochTime</tt> objects containing non-finite numbers MUST be rejected.
+See also <xref target="api.non-finite-numbers"/>.
+</t>
+</li>
+</ol>
+<t>
+If a call does not match the underlying CBOR type, the call MUST be rejected,
+</t>
+<t>
+Due to considerable variations between platforms, corresponding <em>encoder</em>
+API support does not appear to be meaningful to specify in detail:
+Java doesn't have built-in support for unsigned integers, whereas
+JavaScript requires the use of the JavaScript <tt>BigInt</tt> type
+for dealing with 64-bit integers.
+</t>
+  </section>
+  <section anchor="sequences">
+    <name>CBOR Sequences</name>
+    <t>
+Decoders compliant with this specification MUST support CBOR sequences <xref target="RFC8742"/>.
+  </t>
+  <t>For decoders of "true" (binary) CBOR, there are additional requirements:</t>
+  <ul>
+  <li>It MUST be possible to decode one CBOR object at a time.</li>
+  <li>Decoders MUST NOT do any assumptions about the nature of unread code (it might not even be CBOR).</li>
+  </ul>
+    </section>
+  <section anchor="api.non-finite-numbers">
+    <name>Non-Finite Numbers</name>
+    <t>Since non-finite numbers like <tt>NaN</tt> and <tt>Infinity</tt>, are rarely used in
+    application protocols, one could imagine a global option
+    making decoders reject non-finite numbers, which in turn would
+    relieve applications from having to <em>explicitly test</em> decoded <tt>float</tt>
+    objects for being finite ("regular") floating-point numbers.
+    Although working, such an option would not be particularly flexible.</t>
+    <t>To cope with this as well as the fact that platform-native support for <tt>NaN</tt>
+    with payloads like <tt>fa7f801000</tt> is somewhat uneven, compliant <tt>CBOR::Core</tt>
+    implementations MUST support the constructs described in the following sub-sections.</t>
+    <section anchor="non-finite.levels">
+<name>API Support Levels</name>
+    <t>Application protocols MUST be able to <em>selectively accept</em>
+    non-finite numbers, including distinguishing
+    between "simple" <tt>NaN</tt> (<tt>f97e00</tt>)
+    and <tt>NaN</tt> with payloads.
+    This is accomplished by (internally) treating non-finite numbers as a <em>distinct, emulated
+    data type</em>, making it possible to support the full range of floating-point numbers.
+    The API exposes this capability as three distinct levels
+    of floating-point number support:</t>
+    <dl newline="true">
+    <dt>BASIC:</dt>
+    <dd>Supporting "regular" floating-point numbers only.</dd>
+    <dt>EXTENDED:</dt>
+    <dd>Supporting "regular" floating-point numbers, "simple" <tt>NaN</tt>, <tt>Infinity</tt>  and <tt>-Infinity</tt>.</dd>
+    <dt>COMPLETE:</dt>
+    <dd>Supporting all valid floating-point numbers.</dd>
+    </dl>
+    <t>
+    Selection of the level of floating-point number support
+    required for a specific <tt>float</tt> object in a protocol, is accomplished
+    through the use of different API access methods, like the following:</t>
+    <t>A hypothetical <tt>getFloat64()</tt> would reject an encountered "simple" <tt>NaN</tt>, while a
+    hypothetical <tt>getExtendedFloat64()</tt> would treat the <tt>NaN</tt>
+    as any other <xref target="IEEE754"/> floating point number.</t>
+    <t>For a concrete solution, that also addresses <em>encoding</em> of non-finite numbers,
+    and the payload option, see <xref target="NON-FINITE"/>.</t>
+    <t>See also: <xref target="non-finite.encoder"/>.</t> 
+    </section>
+    <section anchor="non-finite.payload">
+<name>Payload Option</name>
+<t>
+Traditionally, the non-finite number space is used for propagating
+math-related problems such as division by zero.
+However, in some cases there may be a desire providing more application specific data,
+like information related to a faulty sensor that needs attention.
+The following tables show a way to represent such data:
+</t>
+<table align="left">
+<name>Payload</name>
+<thead>
+  <tr><th align="center">Payload</th></tr>
+</thead>
+<tbody>
+<tr><td align="center"><tt>d51-d0</tt> in <em>big-endian</em> order</td></tr>
+</tbody>
+</table>
+<t>
+The payload bits are subsequently conceptually put into an <xref target="IEEE754"/>
+<tt>64</tt>-bit object having the following layout:
+</t>
+<table align="left">
+<name>Transformed Payload</name>
+<thead>
+<tr><th align="center">Sign</th><th align="center">Exponent</th><th align="center">Significand</th></tr>
+</thead>
+<tbody>
+<tr><td align="center"><tt>0</tt></td><td align="center"><tt>11111111111</tt></td>
+<td align="center"><tt>d0-d51</tt> in <em>little-endian</em> order</td></tr>
+</tbody>
+</table>
+<t>
+The reason for <em>reversing</em> the payload bits is to ensure that a specific bit will remain
+in a fix position (maintain the same value), independent of the size of the
+<xref target="IEEE754"/> variant used for encoding.
+</t>
+<t>
+Note that the encoder will (due to the deterministic encoding rules), select
+the shortest serialization required to properly represent the payload.
+The following table shows a few examples:
+</t>
+<table align="left">
+<name>Sample Payload Encodings</name>
+<thead>
+<tr><th align="center">Payload (hex)</th><th align="center">CBOR Encoding</th><th align="center">Diagnostic Notation</th></tr>
+</thead>
+<tbody>
+<tr><td align="right"><tt>0</tt></td><td align="right"><tt>f97c00</tt></td><td><tt>Infinity</tt></td></tr>
+<tr><td align="right"><tt>1</tt></td><td align="right"><tt>f97e00</tt></td><td><tt>NaN</tt></td></tr>
+<tr><td align="right"><tt>2</tt></td><td align="right"><tt>f97d00</tt></td><td><tt>float'7d00'</tt></td></tr>
+<tr><td align="right"><tt>3ff</tt></td><td align="right"><tt>f97fff</tt></td><td><tt>float'7fff'</tt></td></tr>
+<tr><td align="right"><tt>400</tt></td><td align="right"><tt>fa7f801000</tt></td><td><tt>float'7f801000'</tt></td></tr>
+<tr><td align="right"><tt>7fffff</tt></td><td align="right"><tt>fa7fffffff</tt></td><td><tt>float'7fffffff'</tt></td></tr>
+<tr><td align="right"><tt>800000</tt></td><td align="right"><tt>fb7ff0000010000000</tt></td><td><tt>float'7ff0000010000000'</tt></td></tr>
+<tr><td align="right"><tt>fffffffffffff</tt></td><td align="right"><tt>fb7fffffffffffffff</tt></td><td><tt>float'7fffffffffffffff'</tt></td></tr>
+</tbody>
+</table>
+<t>A payload of <tt>0</tt> and having the sign bit set, would encode as <tt>f9fc00</tt> (<tt>-Infinity</tt>).</t>
+<t>Obviously, receivers (decoders), MUST use the same convention in order to recreate payloads.</t>
+<t>See also: <xref target="payload.encoder"/>.</t> 
+    </section>
+</section>
+
+<section anchor="media.tyoe">
+<name>Media Type</name>
+<t>Protocols building on <tt>CBOR::Core</tt>, are RECOMMENDED using the media type: <tt>application/cbor</tt>.</t> 
+</section>
+
+<section anchor="diagnostic.notation">
+<name>Diagnostic Notation</name>
+<t>Compliant <tt>CBOR::Core</tt> implementations SHOULD include support for
+<em>bi-directional</em> diagnostic notation, to facilitate:</t>
+<ul>
+<li>Generation of developer-friendly debugging and logging data</li>
+<li>Easy creation of test and configuration data</li>
+</ul>
+<t>
+Note that decoders for diagnostic notation, MUST always produce
+deterministically encoded CBOR data, compliant with this specification.
+This includes <em>automatic</em> sorting of map keys as well.
+</t>
+<t>
+The supported notation is compliant with a subset of 
+<xref section="8" sectionFormat="of"  target="RFC8949"/>
+(<tt>b32'</tt> and encoding indicators were left out),
+but adds a few items to make diagnostic notation
+slightly more adapted for parsing, like single-line comments:
+</t>
+
+<table align="left">
+<name>Diagnostic Notation</name>
+<thead>
+  <tr>
+  <th align="center">CDDL</th>
+  <th align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Syntax&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+  <th align="center">Comment</th>
+  <th align="center">Notes</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td></td>
+    <td align="center"><tt>/</tt>&nbsp;<em>comment&nbsp;text</em>&nbsp;<tt>/</tt></td>
+    <td>
+      Multi-line comment.
+      Multi-line comments are treated as whitespace and may thus also be used
+      <em>between</em> CBOR objects.
+    </td>
+    <td align="center">6</td>
+  </tr>
+  <tr>
+    <td></td>
+    <td align="center"><tt>#</tt>&nbsp;<em>comment&nbsp;text</em></td>
+    <td>
+      Single-line comment.
+      Single-line comments are terminated by a newline character (<tt>'\n'</tt>) or <tt>EOF</tt>.
+      Single-line comments may also terminate lines holding regular CBOR items.
+    </td>
+    <td align="center">6</td>
+  </tr>
+  <tr>
+    <td align="center"><tt>integer</tt></td>
+    <td align="center"><em>{sign}&#x2009;{&#x2008;</em><tt>0b</tt>|<tt>0o</tt>|<tt>0x</tt><em>}&#x2009;n</em></td>
+    <td>
+      Arbitrary sized integers without fractional components or exponents.
+      See also CBOR integer encoding.
+      For <em>input</em> data in diagnostic notation, binary, octal, and hexadecimal notation
+      is also supported by prepending numbers with <tt>0b</tt>, <tt>0o</tt>, and <tt>0x</tt> respectively.
+      The latter also permit arbitrary insertions of <tt>'_'</tt> characters between digits to
+      enable grouping of data like <tt>0b100_000000001</tt>.
+    </td>
+    <td align="center">1, 2</td>
+  </tr>
+  <tr>
+    <td align="center"><tt>float</tt></td>
+    <td align="center"><em>{sign}&#x2009;n</em><tt>.</tt><em>n&#x2009;{&#x2008;</em><tt>e&pm;</tt><em>n&#x2009;}</em></td>
+    <td>
+      Floating-point values MUST include a decimal point and at least one
+      fractional digit, whereas exponents are <em>optional</em>.
+    </td>
+    <td align="center">1, 2</td>
+  </tr>
+  <tr>
+    <td align="center"><tt>float</tt></td>
+    <td align="center"><tt>float'</tt><em>hex-data</em><tt>'</tt></td>
+    <td>
+      Any valid 16, 32, or 64-bit float value, including NaN with payloads
+      like <tt>float'7ff0800000000001'</tt>.
+    </td>
+    <td align="center"></td>
+  </tr>
+  <tr>
+    <td align="center"><tt>float</tt></td>
+    <td align="center"><tt>NaN</tt></td>
+    <td>
+      Not a number (NaN) in the default CBOR encoding (<tt>f97e00</tt>).
+    </td>
+    <td align="center"></td>
+  </tr>
+  <tr>
+    <td align="center"><tt>float</tt></td>
+    <td align="center"><em>{sign}&#x2009;</em><tt>Infinity</tt></td>
+    <td>
+      Infinity.
+    </td>
+    <td align="center">2</td>
+  </tr>
+  <tr>
+    <td align="center"><tt>bstr</tt></td>
+    <td align="center"><tt>h'</tt><em>hex-data</em><tt>'</tt></td>
+    <td>
+      Byte data provided in hexadecimal notation.
+      Each byte MUST be represented by two hexadecimal digits.
+    </td>
+    <td align="center">3</td>
+  </tr>
+  <tr>
+    <td align="center"><tt>bstr</tt></td>
+    <td align="center"><tt>b64'</tt><em>base64-data</em><tt>'</tt></td>
+    <td>
+      Byte data provided in base64 or base64URL notation.
+      Padding with <tt>'='</tt> characters is <em>optional</em>.
+    </td>
+    <td align="center">3, 6</td>
+  </tr>
+  <tr>
+    <td align="center"><tt>bstr</tt></td>
+    <td align="center"><tt>'</tt><em>text</em><tt>'</tt></td>
+    <td>Byte data provided as UTF-8 encoded text.</td>
+    <td align="center">4,&nbsp;5,&nbsp;6</td>
+  </tr>
+  <tr>
+   <td align="center"><tt>bstr</tt></td>
+    <td align="center"><tt>&lt;&lt;</tt>&nbsp;<em>object...</em>&nbsp;<tt>&gt;&gt;</tt></td>
+    <td>Construct holding zero or more comma-separated CBOR objects
+    that are subsequently wrapped in a byte string.</td>
+    <td align="center">6</td>
+  </tr>
+  <tr>
+    <td align="center"><tt>tstr</tt></td>
+    <td align="center"><tt>&quot;</tt><em>text</em><tt>&quot;</tt></td>
+    <td>UTF-8 encoded text string.</td>
+    <td align="center">4, 5</td>
+  </tr>
+  <tr>
+    <td align="center"><tt>bool</tt></td>
+    <td align="center"><tt>true</tt>&#x200a;|&#x200a;<tt>false</tt></td>
+    <td>Boolean value.</td>
+    <td align="center"></td>
+  </tr>
+  <tr>
+    <td align="center"><tt>null</tt></td>
+    <td align="center"><tt>null</tt></td>
+    <td>Null value.</td>
+    <td align="center"></td>
+  </tr>
+  <tr>
+    <td align="center"><tt>[]</tt></td>
+    <td align="center"><tt>[</tt>&nbsp;<em>object...</em>&nbsp;<tt>]</tt></td>
+    <td>Array with zero or more comma-separated CBOR objects.</td>
+    <td align="center"></td>
+  </tr>
+  <tr>
+    <td align="center"><tt>{}</tt></td>
+    <td align="center"><tt>{</tt>&nbsp;<em>key</em><tt>:</tt><em>value...</em>&nbsp;<tt>}</tt></td>
+    <td>
+      Map with zero or more comma-separated key/value pairs.
+      Key and value pairs are expressed as CBOR objects, separated by a <tt>':'</tt> character.
+    </td>
+    <td align="center"></td>
+  </tr>
+  <tr>
+    <td align="center"><tt>#6.nnn</tt></td>
+    <td align="center"><em>n</em>&#x2009;<tt>(</tt>&nbsp;<em>object</em>&nbsp;<tt>)</tt></td>
+    <td>Tag holding a CBOR object.</td>
+    <td align="center">1</td>
+  </tr>
+  <tr>
+    <td align="center"><tt>#7.nnn</tt></td>
+    <td align="center"><tt>simple(</tt><em>n</em><tt>)</tt></td>
+    <td>Simple value.</td>
+    <td align="center">1</td>
+  </tr>
+  <tr>
+    <td align="center"></td>
+    <td align="center"><tt>,</tt></td>
+    <td>Separator character for CBOR sequences.</td>
+    <td align="center">6</td>
+  </tr>
+</tbody>
+</table>
+
+  <ol>
+    <li>The letter <em>n</em> in the Syntax column denotes one or more digits.</li>
+    <li>The optional <em>{sign}</em> MUST be a single hyphen (<tt>'-'</tt>) character.</li>
+    <li>
+      <em>Input only</em>: between tokens, the whitespace characters
+      <tt>' '</tt>, <tt>'\t'</tt>, <tt>'\r'</tt>, and <tt>'\n'</tt>,
+      are <em>ignored</em>.
+    </li>
+    <li>
+      <em>Input only</em>: inside of string quotes, the control character <tt>'\n'</tt>
+      becomes a part of the text string.
+      For normalizing line terminators,
+      a single <tt>'\r'</tt> or the combination <tt>'\r\n'</tt>
+      MUST (internally) be rewritten as <tt>'\n'</tt>.
+      To <em>avoid</em> getting newline characters (<tt>'\n'</tt>)
+      included in multi-line text strings,
+      a <em>line continuation marker</em> consisting of a backslash&nbsp;(<tt>'\'</tt>)
+      immediately preceding the newline may be used. 
+    </li>
+    <li>
+      Text strings may also include the JavaScript compatible escape sequences
+      <tt>'\''</tt>, <tt>'\"'</tt>, <tt>'\\'</tt>,
+      <tt>'\b'</tt>, <tt>'\f'</tt>, <tt>'\n'</tt>,
+      <tt>'\r'</tt>, <tt>'\t'</tt>, and <tt>'\u</tt><em>hhhh</em><tt>'</tt>.
+    </li>
+    <li>
+      <em>Input only</em>.
+    </li>
+  </ol>
+  <t>The <xref target="PLAYGROUND"/> offers a simple way to get acquainted
+  with CBOR and diagnostic notation.</t>
+
+      </section>
+
+    </section>  
+   
+    </section>   
+    
+    <section anchor="IANA">
+       <name>IANA Considerations</name>
+      <t>This memo includes no request to IANA.</t>
+    </section>
+    
+    <section anchor="Security">
+       <name>Security Considerations</name>
+<t>
+<tt>CBOR::Core</tt> does not introduce security issues beyond
+what is already applicable to  <xref target="RFC8949"/>.
+</t>
+<t>
+Poorly written tools and applications may certainly introduce security issues,
+but this is out of scope for this specification.
+</t>
+    </section>
+    
+   </middle>
+
+  <back>
+    <references>
+      <name>References</name>
+      <references>
+        <name>Normative References</name>
+        <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.2119.xml"/>
+        <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8174.xml"/>
+        <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8949.xml"/>
+        <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8610.xml"/>
+        <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.3629.xml"/>
+        <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8742.xml"/>
+        <reference anchor="IEEE754" target="https://ieeexplore.ieee.org/document/8766229" quoteTitle="true" derivedAnchor="IEEE754">
+          <front>
+            <title>IEEE Standard for Floating-Point Arithmetic</title>
+            <author>
+              <organization showOnFrontPage="true">IEEE</organization>
+            </author>
+            <date/>
+          </front>
+          <seriesInfo name="IEEE Std" value="754-2019"/>
+          <seriesInfo name="DOI" value="10.1109/IEEESTD.2019.8766229"/>
+        </reference>
+      </references>
+ 
+      <references>
+        <name>Informative References</name>
+        <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.9052.xml"/>
+        <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.9053.xml"/>
+        <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8785.xml"/>
+        <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8259.xml"/>
+
+        <reference anchor="CSF" target="https://cyberphone.github.io/javaapi/org/webpki/cbor/doc-files/signatures.html">
+          <front>
+            <title>CBOR Signature Format (CSF)</title>
+            <author/>
+          </front>
+        </reference>
+
+        <reference anchor="COTX" target="https://www.ietf.org/archive/id/draft-rundgren-cotx-04.html">
+          <front>
+            <title>CBOR Object Type Extension (COTX)</title>
+            <author initials="A" surname="Rundgren">
+              <organization/>
+            </author>
+          </front>
+        </reference>
+
+        <reference anchor="CONSTRAINED" target="https://github.com/cyberphone/D-CBOR/blob/main/d-cbor-4-constrained-devices.md">
+          <front>
+            <title>D-CBOR for Constrained Devices</title>
+            <author/>
+          </front>
+        </reference>
+ 
+        <reference anchor="NODE.JS" target="https://nodejs.org/">
+          <front>
+            <title>Node.js - JavaScript server</title>
+            <author/>
+          </front>
+        </reference>
+ 
+        <reference anchor="NON-FINITE" target="https://cyberphone.github.io/CBOR.js/doc/non-finite-numbers.html">
+          <front>
+            <title>Non-Finite Numbers</title>
+            <author/>
+          </front>
+        </reference>
+
+        <reference anchor="CBOR.JS" target="https://github.com/cyberphone/CBOR.js">
+          <front>
+            <title>CBOR.js - CBOR for JavaScript</title>
+            <author/>
+          </front>
+        </reference>
+
+        <reference anchor="CSF-LAB" target="https://test.webpki.org/csf-lab">
+          <front>
+            <title>Online CBOR and CSF test tool</title>
+            <author/>
+          </front>
+        </reference>
+
+        <reference anchor="PLAYGROUND" target="https://cyberphone.github.io/CBOR.js/doc/playground.html">
+          <front>
+            <title>Online CBOR testing tool</title>
+            <author/>
+          </front>
+        </reference>
+
+        <reference anchor="OPENKEYSTORE" target="https://github.com/cyberphone/openkeystore">
+          <front>
+            <title>Java library supporting JSON, CBOR, and Crypto</title>
+            <author/>
+          </front>
+        </reference>
+
+        <reference anchor="ANDROID-CBOR" target="https://github.com/cyberphone/android-cbor">
+          <front>
+            <title>Android/Java library supporting CBOR and Crypto</title>
+            <author/>
+          </front>
+        </reference>
+
+        <reference anchor="CREDENTIALS" target="https://www.w3.org/TR/vc-data-integrity/">
+          <front>
+            <title>Verifiable Credential Data Integrity 1.0</title>
+            <author initials="M" surname="Sporny (et al)">
+               <organization/>
+            </author>
+            <date year="2025"/>
+          </front>
+        </reference> 
+
+        <reference anchor="CBOR.ME" target="https://cbor.me/">
+          <front>
+            <title>Online CBOR testing tool</title>
+            <author initials="C" surname="Bormann">
+               <organization/>
+            </author>
+          </front>
+        </reference> 
+       
+        <reference anchor="ECMASCRIPT" target="https://www.ecma-international.org/publications/standards/Ecma-262.htm" quoteTitle="true" derivedAnchor="ECMA262">
+          <front>
+            <title>ECMAScript® 2024 Language Specification</title>
+            <author>
+              <organization showOnFrontPage="true">Ecma International</organization>
+            </author>
+            <date year="2024" month="June"/>
+          </front>
+          <refcontent>Standard ECMA-262, 15th Edition</refcontent>
+        </reference>
+
+        <reference anchor="WALLET" target="https://cyberphone.github.io/doc/defensive-publications/partial-encryption-full-signature.pdf">
+          <front>
+            <title>Defensive publication: Partial Encryption, Full Signature</title>
+            <author fullname="Anders Rundgren" initials="A." surname="Rundgren">
+              <organization/>
+            </author>
+          </front>
+        </reference>
+        
+      </references>
+    </references>
+
+    <section anchor="sample.values">
+    <name>Sample Encodings</name>
+
+      <section anchor="core.integers">
+          <name>Integers</name>
+<t>This <em>normative</em> section holds a selection
+of CBOR integer values, with an emphasize on edge cases.</t>
+
+<table align="left">
+<name>Integers</name>
+<thead>
+  <tr><th align="center">Diagnostic&nbsp;Notation</th>
+  <th align="center">CBOR Encoding</th>
+  <th align="center">Comment</th></tr>
+</thead>
+<tbody>
+<tr><td align="right"><tt>0</tt></td>
+<td align="right"><tt>00</tt></td>
+<td>Smallest positive implicit <tt>int</tt></td></tr>
+<tr><td align="right"><tt>-1</tt></td>
+<td align="right"><tt>20</tt></td>
+<td>Smallest negative implicit <tt>int</tt></td></tr>
+<tr><td align="right"><tt>23</tt></td>
+<td align="right"><tt>17</tt></td>
+<td>Largest positive implicit <tt>int</tt></td></tr>
+<tr><td align="right"><tt>-24</tt></td>
+<td align="right"><tt>37</tt></td>
+<td>Largest negative implicit <tt>int</tt></td></tr>
+<tr><td align="right"><tt>24</tt></td>
+<td align="right"><tt>1818</tt></td>
+<td>Smallest positive one-byte <tt>int</tt></td></tr>
+<tr><td align="right"><tt>-25</tt></td>
+<td align="right"><tt>3818</tt></td>
+<td>Smallest negative one-byte <tt>int</tt></td></tr>
+<tr><td align="right"><tt>255</tt></td>
+<td align="right"><tt>18ff</tt></td>
+<td>Largest positive one-byte <tt>int</tt></td></tr>
+<tr><td align="right"><tt>-256</tt></td>
+<td align="right"><tt>38ff</tt></td>
+<td>Largest negative one-byte <tt>int</tt></td></tr>
+<tr><td align="right"><tt>256</tt></td>
+<td align="right"><tt>190100</tt></td>
+<td>Smallest positive two-byte <tt>int</tt></td></tr>
+<tr><td align="right"><tt>-257</tt></td>
+<td align="right"><tt>390100</tt></td>
+<td>Smallest negative two-byte <tt>int</tt></td></tr>
+<tr><td align="right"><tt>65535</tt></td>
+<td align="right"><tt>19ffff</tt></td>
+<td>Largest positive two-byte <tt>int</tt></td></tr>
+<tr><td align="right"><tt>-65536</tt></td>
+<td align="right"><tt>39ffff</tt></td>
+<td>Largest negative two-byte <tt>int</tt></td></tr>
+<tr><td align="right"><tt>65536</tt></td>
+<td align="right"><tt>1a00010000</tt></td>
+<td>Smallest positive four-byte <tt>int</tt></td></tr>
+<tr><td align="right"><tt>-65537</tt></td>
+<td align="right"><tt>3a00010000</tt></td>
+<td>Smallest negative four-byte <tt>int</tt></td></tr>
+<tr><td align="right"><tt>4294967295</tt></td>
+<td align="right"><tt>1affffffff</tt></td>
+<td>Largest positive four-byte <tt>int</tt></td></tr>
+<tr><td align="right"><tt>-4294967296</tt></td>
+<td align="right"><tt>3affffffff</tt></td>
+<td>Largest negative four-byte <tt>int</tt></td></tr>
+<tr><td align="right"><tt>4294967296</tt></td>
+<td align="right"><tt>1b0000000100000000</tt></td>
+<td>Smallest positive eight-byte <tt>int</tt></td></tr>
+<tr><td align="right"><tt>-4294967297</tt></td>
+<td align="right"><tt>3b0000000100000000</tt></td>
+<td>Smallest negative eight-byte <tt>int</tt></td></tr>
+<tr><td align="right"><tt>18446744073709551615</tt></td>
+<td align="right"><tt>1bffffffffffffffff</tt></td>
+<td>Largest positive eight-byte <tt>int</tt></td></tr>
+<tr><td align="right"><tt>-18446744073709551616</tt></td>
+<td align="right"><tt>3bffffffffffffffff</tt></td>
+<td>Largest negative eight-byte <tt>int</tt></td></tr>
+<tr><td align="right"><tt>18446744073709551616</tt></td>
+<td align="right"><tt>c249010000000000000000</tt></td>
+<td>Smallest positive <tt>bigint</tt></td></tr>
+<tr><td align="right"><tt>-18446744073709551617</tt></td>
+<td align="right"><tt>c349010000000000000000</tt></td>
+<td>Smallest negative <tt>bigint</tt></td></tr>
+</tbody>
+</table>
+      </section>
+
+      <section anchor="core.floats">
+        <name>Floating-Point Numbers</name>
+<t>This <em>normative</em> section holds a selection
+of <xref target="IEEE754"/> 16, 32, and 64-bit values,
+with an emphasize on edge cases.</t>
+<t>The textual representation of the values is based on
+the serialization method for the <tt>Number</tt> data type,
+defined by <xref target="ECMASCRIPT"/> with one change:
+to comply with diagnostic notation
+(<xref target="diagnostic.notation"/>), all values are
+expressed as floating-point numbers.
+The rationale for using <xref target="ECMASCRIPT"/> serialization is
+because it is supposed to generate the shortest and most
+correct representation of <xref target="IEEE754"/> numbers.</t>
+
+<table align="left">
+<name>Floating-Point Numbers</name>
+<thead>
+  <tr><th align="center">Diagnostic&nbsp;Notation</th>
+  <th align="center">CBOR&nbsp;Encoding</th>
+  <th align="center">Comment</th></tr>
+</thead>
+<tbody>
+<tr><td align="right"><tt>0.0</tt></td>
+<td align="right"><tt>f90000</tt></td>
+<td>Zero</td></tr>
+<tr><td align="right"><tt>-0.0</tt></td>
+<td align="right"><tt>f98000</tt></td>
+<td>Negative zero</td></tr>
+<tr><td align="right"><tt>Infinity</tt></td>
+<td align="right"><tt>f97c00</tt></td>
+<td>Infinity</td></tr>
+<tr><td align="right"><tt>-Infinity</tt></td>
+<td align="right"><tt>f9fc00</tt></td>
+<td>Negative infinity</td></tr>
+<tr><td align="right"><tt>NaN</tt></td>
+<td align="right"><tt>f97e00</tt></td>
+<td>Not a number</td></tr>
+<tr><td align="right"><tt>5.960464477539063e-8</tt></td>
+<td align="right"><tt>f90001</tt></td>
+<td>Smallest positive subnormal <tt>float16</tt></td></tr>
+<tr><td align="right"><tt>0.00006097555160522461</tt></td>
+<td align="right"><tt>f903ff</tt></td>
+<td>Largest positive subnormal <tt>float16</tt></td></tr>
+<tr><td align="right"><tt>0.00006103515625</tt></td>
+<td align="right"><tt>f90400</tt></td>
+<td>Smallest positive <tt>float16</tt></td></tr>
+<tr><td align="right"><tt>65504.0</tt></td>
+<td align="right"><tt>f97bff</tt></td>
+<td>Largest positive <tt>float16</tt></td></tr>
+<tr><td align="right"><tt>1.401298464324817e-45</tt></td>
+<td align="right"><tt>fa00000001</tt></td>
+<td>Smallest positive subnormal <tt>float32</tt></td></tr>
+<tr><td align="right"><tt>1.1754942106924411e-38</tt></td>
+<td align="right"><tt>fa007fffff</tt></td>
+<td>Largest positive subnormal <tt>float32</tt></td></tr>
+<tr><td align="right"><tt>1.1754943508222875e-38</tt></td>
+<td align="right"><tt>fa00800000</tt></td>
+<td>Smallest positive <tt>float32</tt></td></tr>
+<tr><td align="right"><tt>3.4028234663852886e+38</tt></td>
+<td align="right"><tt>fa7f7fffff</tt></td>
+<td>Largest positive <tt>float32</tt></td></tr>
+<tr><td align="right"><tt>5.0e-324</tt></td>
+<td align="right"><tt>fb0000000000000001</tt></td>
+<td>Smallest positive subnormal <tt>float64</tt></td></tr>
+<tr><td align="right"><tt>2.225073858507201e-308</tt></td>
+<td align="right"><tt>fb000fffffffffffff</tt></td>
+<td>Largest positive subnormal <tt>float64</tt></td></tr>
+<tr><td align="right"><tt>2.2250738585072014e-308</tt></td>
+<td align="right"><tt>fb0010000000000000</tt></td>
+<td>Smallest positive <tt>float64</tt></td></tr>
+<tr><td align="right"><tt>1.7976931348623157e+308</tt></td>
+<td align="right"><tt>fb7fefffffffffffff</tt></td>
+<td>Largest positive <tt>float64</tt></td></tr>
+<tr><td align="right"><tt>-0.0000033333333333333333</tt></td>
+<td align="right"><tt>fbbecbf647612f3696</tt></td>
+<td>Randomly selected number</td></tr>
+<tr><td align="right"><tt>10.559998512268066</tt></td>
+<td align="right"><tt>fa4128f5c1</tt></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-"-</td></tr>
+<tr><td align="right"><tt>10.559998512268068</tt></td>
+<td align="right"><tt>fb40251eb820000001</tt></td>
+<td>Next in succession</td></tr>
+<tr><td align="right"><tt>295147905179352830000.0</tt></td>
+<td align="right"><tt>fa61800000</tt></td>
+<td><tt>2<sup>68</sup></tt> (diagnostic notation truncates precision)</td></tr>
+<tr><td align="right"><tt>2.0</tt></td>
+<td align="right"><tt>f94000</tt></td>
+<td>Number without a fractional part</td></tr>
+<tr><td align="right"><tt>-5.960464477539063e-8</tt></td>
+<td align="right"><tt>f98001</tt></td>
+<td>Smallest negative subnormal <tt>float16</tt></td></tr>
+<tr><td align="right"><tt>-5.960464477539062e-8</tt></td>
+<td align="right"><tt>fbbe6fffffffffffff</tt></td>
+<td>Adjacent smallest negative subnormal <tt>float16</tt></td></tr>
+<tr><td align="right"><tt>-5.960464477539064e-8</tt></td>
+<td align="right"><tt>fbbe70000000000001</tt></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-"-</td></tr>
+<tr><td align="right"><tt>-5.960465188081798e-8</tt></td>
+<td align="right"><tt>fab3800001</tt></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-"-</td></tr>
+<tr><td align="right"><tt>0.0000609755516052246</tt></td>
+<td align="right"><tt>fb3f0ff7ffffffffff</tt></td>
+<td>Adjacent largest subnormal <tt>float16</tt></td></tr>
+<tr><td align="right"><tt>0.000060975551605224616</tt></td>
+<td align="right"><tt>fb3f0ff80000000001</tt></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-"-</td></tr>
+<tr><td align="right"><tt>0.000060975555243203416</tt></td>
+<td align="right"><tt>fa387fc001</tt></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-"-</td></tr>
+<tr><td align="right"><tt>0.00006103515624999999</tt></td>
+<td align="right"><tt>fb3f0fffffffffffff</tt></td>
+<td>Adjacent smallest <tt>float16</tt></td></tr>
+<tr><td align="right"><tt>0.00006103515625000001</tt></td>
+<td align="right"><tt>fb3f10000000000001</tt></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-"-</td></tr>
+<tr><td align="right"><tt>0.00006103516352595761</tt></td>
+<td align="right"><tt>fa38800001</tt></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-"-</td></tr>
+<tr><td align="right"><tt>65503.99999999999</tt></td>
+<td align="right"><tt>fb40effbffffffffff</tt></td>
+<td>Adjacent largest <tt>float16</tt></td></tr>
+<tr><td align="right"><tt>65504.00000000001</tt></td>
+<td align="right"><tt>fb40effc0000000001</tt></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-"-</td></tr>
+<tr><td align="right"><tt>65504.00390625</tt></td>
+<td align="right"><tt>fa477fe001</tt></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-"-</td></tr>
+<tr><td align="right"><tt>1.4012984643248169e-45</tt></td>
+<td align="right"><tt>fb369fffffffffffff</tt></td>
+<td>Adjacent smallest subnormal <tt>float32</tt></td></tr>
+<tr><td align="right"><tt>1.4012984643248174e-45</tt></td>
+<td align="right"><tt>fb36a0000000000001</tt></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-"-</td></tr>
+<tr><td align="right"><tt>1.175494210692441e-38</tt></td>
+<td align="right"><tt>fb380fffffbfffffff</tt></td>
+<td>Adjacent largest subnormal <tt>float32</tt></td></tr>
+<tr><td align="right"><tt>1.1754942106924412e-38</tt></td>
+<td align="right"><tt>fb380fffffc0000001</tt></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-"-</td></tr>
+<tr><td align="right"><tt>1.1754943508222874e-38</tt></td>
+<td align="right"><tt>fb380fffffffffffff</tt></td>
+<td>Adjacent smallest <tt>float32</tt></td></tr>
+<tr><td align="right"><tt>1.1754943508222878e-38</tt></td>
+<td align="right"><tt>fb3810000000000001</tt></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-"-</td></tr>
+<tr><td align="right"><tt>3.4028234663852882e+38</tt></td>
+<td align="right"><tt>fb47efffffdfffffff</tt></td>
+<td>Adjacent largest <tt>float32</tt></td></tr>
+<tr><td align="right"><tt>3.402823466385289e+38</tt></td>
+<td align="right"><tt>fb47efffffe0000001</tt></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-"-</td></tr>
+</tbody>
+</table>
+
+    </section>
+    <section anchor="core.misc">
+        <name>Miscellaneous Items</name>
+<t>This <em>normative</em> section holds a selection
+of miscellaneous CBOR objects and their encoding.</t>
+<table align="left">
+<name>Miscellaneous Items</name>
+<thead>
+<tr>
+<th align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Diagnostic&nbsp;Notation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<th align="center">CBOR Encoding</th>
+<th align="center">Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr><td><tt>true</tt></td>
+<td><tt>f5</tt></td>
+<td>Boolean true</td></tr>
+<tr><td><tt>null</tt></td>
+<td><tt>f6</tt></td>
+<td>Null</td></tr>
+<tr><td><tt>simple(99)</tt></td>
+<td><tt>f863</tt></td>
+<td>Simple value</td></tr>
+<tr><td><tt>0("2025-03-30T12:24:16Z")</tt></td>
+<td><tt>c074323032352d30332d33<br/>
+305431323a32343a31365a</tt></td>
+<td>ISO date/time</td></tr>
+<tr><td><tt>[1, [2, 3], [4, 5]]</tt></td>
+<td><tt>8301820203820405</tt></td>
+<td>Array combinations</td></tr>
+<tr><td><tt>{<br/>
+&nbsp;&nbsp;"a": 0,<br/>
+&nbsp;&nbsp;"b": 1,<br/>
+&nbsp;&nbsp;"aa": 2<br/>
+}</tt></td>
+<td><tt>a361610161620262616103</tt></td>
+<td>Map object</td></tr>
+<tr><td><tt>h'48656c6c6f2043424f5221'</tt></td>
+<td><tt>4b48656c6c6f2043424f5221</tt></td>
+<td>Binary string</td></tr>
+<tr><td><tt>"&#x1f680; science"</tt></td>
+<td><tt>6cf09f9a8020736369656e6365</tt></td>
+<td>Text string with emoji</td></tr>
+<tr><td><tt>float'7f800001'</tt></td>
+<td><tt>fa7f800001</tt></td>
+<td>NaN with payload</td></tr>
+<tr><td><tt>float'fff0001230000000'</tt></td>
+<td><tt>fbfff0001230000000</tt></td>
+<td>NaN with payload and sign</td></tr>
+</tbody>
+</table>
+
+    </section>
+    <section anchor="core.invalid">
+      <name>Invalid Encodings</name>
+      <t>The following table holds a selection of CBOR-encoded objects,
+      that (by default) MUST be rejected by compliant <tt>CBOR::Core</tt> implementations.</t>
+<table align="left">
+<name>Invalid Encodings</name>
+<thead>
+  <tr><th align="center">CBOR Encoding</th><th align="center">Diagnostic Notation</th>
+  <th align="center">Comment</th><th align="center">Notes</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><tt>a2616201616100</tt></td>
+<td><tt>{<br/>
+&nbsp;&nbsp;"b": 1,<br/>
+&nbsp;&nbsp;"a": 0<br/>
+}</tt></td>
+<td>Improper map key ordering</td>
+<td align="center">1</td>
+</tr>
+
+<tr>
+<td><tt>98020405</tt></td>
+<td><tt>[4, 5]</tt></td>
+<td>Array length with leading zero</td>
+<td align="center">1</td>
+</tr>
+
+<tr>
+<td><tt>1900ff</tt></td>
+<td><tt>255</tt></td>
+<td>Number with leading zero</td>
+<td align="center">1</td>
+</tr>
+
+<tr>
+<td><tt>c34a00010000000000000000</tt></td>
+<td><tt>-18446744073709551617</tt></td>
+<td>Number with leading zero</td>
+<td align="center">1</td>
+</tr>
+
+<tr>
+<td><tt>Fa41280000</tt></td>
+<td><tt>10.5</tt></td>
+<td>Not using shortest encoding</td>
+<td align="center">1</td>
+</tr>
+
+<tr>
+<td><tt>fa7fc00000</tt></td>
+<td><tt>NaN</tt></td>
+<td>Not using shortest encoding</td>
+<td align="center">1</td>
+</tr>
+
+<tr>
+<td><tt>fa7fffe000</tt></td>
+<td><tt>float'7fff'</tt></td>
+<td>Not using shortest encoding</td>
+<td align="center">1</td>
+</tr>
+
+<tr>
+<td><tt>c243010000</tt></td>
+<td><tt>65536</tt></td>
+<td>Incorrect value for <tt>bigint</tt></td>
+<td align="center">1</td>
+</tr>
+
+<tr>
+<td><tt>5f4101420203ff</tt></td>
+<td><tt>(_ h'01', h'0203')</tt></td>
+<td>Indefinite length object</td>
+<td align="center">2</td>
+</tr>
+<tr>
+<td><tt>fc</tt></td>
+<td></td>
+<td>Reserved</td>
+<td></td>
+</tr>
+<tr>
+<td><tt>f818</tt></td>
+<td></td>
+<td>Invalid simple value</td>
+<td></td>
+</tr>
+<tr>
+<td><tt>5b0010000000000000</tt></td>
+<td></td>
+<td>Extremely large <tt>bstr</tt> length indicator: 4503599627370496</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<ol>
+<li>Enabled by the measures mentioned in <xref target="backward.compatibility"/>.</li>
+<li>Not supported by <tt>CBOR::Core</tt>.</li>
+</ol>
+
+    </section>
+
+    </section>
+
+    <section anchor="non-finite.encoder">
+      <name>Non-finite Number Encoder</name>
+      <t>The following JavaScript sample encodes non-finite
+      numbers (<xref target="api.non-finite-numbers"/>) as mandated by the deterministic encoding rules:</t>
+<sourcecode name="Non-finite encoder" type="JavaScript">
+<![CDATA[// Input: 16, 32, or 64-bit non-finite number in a BigInt.
+// Returns: CBOR binary in a Uint8Array.
+function nonFinite2Cbor(value) {
+  // Errors force execution to the statement after the while-loop.
+  badValue:
+    while (true) {
+      if (value < 0n) break badValue;
+      // Convert the value into a byte array.
+      let array = [];
+      let i = value;
+      do {
+        array.push(Number(i & 0xffn));
+      } while (i >>= 8n);
+      let ieee754 = new Uint8Array(array.reverse());
+      // Verify that the value is a valid non-finite number.
+      let exponent;
+      switch (ieee754.length) {
+        case 2:
+          exponent = 0x7c00n;
+          break;
+        case 4:
+          exponent = 0x7f800000n;
+          break;
+        case 8:
+          exponent = 0x7ff0000000000000n;
+          break;
+        default:
+          break badValue;
+      }
+      if ((value & exponent) != exponent) break badValue;
+      // Get sign bit.
+      let sign = ieee754[0] > 0x7f;
+      // If not already a 16-bit value, try reducing 
+      // the value to the next shorter variant.
+      // This done by testing if a right-shift to the
+      // next shorter variant would lead to lost bits
+      // in the significand.  If there would be lost bits,
+      // the process terminates (break), otherwise the shift is
+      // performed. Next all but the sign bit is masked away.
+      // This also sets the exponent to the correct value for
+      // the shorter variant.  Finally, the sign bit is
+      // restored and the process is restarted.
+      switch (ieee754.length) {
+        case 4:
+          if (value & ((1n << 13n) - 1n)) break;
+          value >>= 13n;
+          value &= 0x7fffn;
+          if (sign) value |= 0x8000n;
+          continue;
+        case 8:
+          if (value & ((1n << 29n) - 1n)) break;
+          value >>= 29n;
+          value &= 0x7fffffffn;
+          if (sign) value |= 0x80000000n;
+          continue;
+      }
+      // Reductions done, return proper CBOR encoding.
+      let cbor = new Uint8Array(1 + ieee754.length);
+      cbor.set(new Uint8Array([0xf9 + (ieee754.length >> 2)]));
+      cbor.set(ieee754, 1);
+      return cbor;
+    }
+  // Invalid argument.
+  throw new Error("Invalid non-finite number: " + value);
+}]]></sourcecode>
+    <section anchor="payload.encoder">
+      <name>Payload Encoder</name>
+      <t>The following JavaScript sample encodes payloads (<xref target="non-finite.payload"/>) as
+      numbers as mandated by the deterministic encoding rules:</t>
+ <sourcecode name="Non-finite encoder" type="JavaScript">
+<![CDATA[// Input: up to 52 bit payload as a BigInt.
+// Input: sign (true or false)
+// Returns: CBOR binary in a Uint8Array.
+function payload2Cbor(payload, sign) {
+  let left64 = sign ? 0xfff0000000000000n : 0x7ff0000000000000n;
+  if (payload < 0n || payload > 0xfffffffffffffn) {
+    throw new Error("Invalid payload: " + payload);
+  }
+  // Reverse the payload bits.
+  let reversed = 0n;
+  for (let i = 0; i < 52; i++) {
+    reversed <<= 1n;
+    reversed |= payload & 1n;
+    payload >>= 1n;
+  }
+  // Create 64-bit IEEE-754 object.
+  // Then apply deterministic encoding.
+  return nonFinite2Cbor(reversed + left64);
+}]]></sourcecode>
+    </section>
+   </section>
+    
+    <section anchor="embedded.signatures">
+      <name>Embedded Signatures</name>
+      <t>This is a <em>non-normative</em> appendix showing how <tt>CBOR::Core</tt>
+      can be used for supporting embedded signatures.</t>
+      <t>The primary advantages with <em>embedded</em> signatures compared to
+      <em>enveloping</em> signatures (like used by COSE <xref target="RFC9052"/>), 
+      include:</t>
+      <ul>
+        <li>Keeping the <em>structure</em> of the original (unsigned) data intact,
+        by simply making signatures an additional attribute.</li>
+        <li>
+        <t>
+        Enabling top-level, <em>object identifiers</em> 
+        to become a part of the signed data as well:</t>
+               <sourcecode name="Tag object-id" type="cbor">
+<![CDATA[123456789({                            # CBOR tag (objectId)
+  1: "This is not rocket science!",    # Object instance data
+  2: [38.8882, -77.01988],             #         ""
+  simple(99): «signature covering the entire object»
+})]]></sourcecode>
+<t>
+See also <xref target="COTX"/>.
+</t>
+        </li>
+        <li>Permitting signing CBOR data and associated security
+        attributes (aka "headers"), <em>in one go</em>, without
+        having to wrap data in CBOR "bstr" objects.
+        Non-wrapped data also makes debugging and documentation easier.</li>
+      </ul>
+      <t>Embedded signatures are for example featured in Verified Credentials 
+      <xref target="CREDENTIALS"/>.
+      A drawback with designs based on JSON <xref target="RFC8259"/> is that they
+      rely on <em>canonicalization schemes</em> like JCS <xref target="RFC8785"/>,
+      that require specialized encoders and decoders, whereas <tt>CBOR::Core</tt> works
+      "straight out of the box".</t>
+
+      <section anchor="example.signature">
+      <name>Sample Signature</name>
+      <t>Although this specification is not "married" to any particular
+      signature schema, the following example uses the CBOR Signature Format
+      <xref target="CSF"/>.
+      For the sake of simplicity, the example uses an HMAC
+      (see <xref target="example.parameters"/>)
+      as signature algorithm.</t>
+      <t>For a more sophisticated use of <tt>CBOR::Core</tt>, combining
+      signatures and encryption, see <xref target="WALLET"/>.</t>
+
+      <section anchor="example.unsigned">
+        <name>Unsigned Data</name>
+        <t>Imagine you have a CBOR map object like the following
+        that you want to sign:</t>
+       <sourcecode name="Unsigned Data" type="cbor">
+<![CDATA[{
+  1: "data",
+  2: "more data"
+}]]></sourcecode>
+      </section>
+      <section anchor="example.signing">
+        <name>Signature Process</name>
+        <t>This section describes the steps required for adding an
+        embedded signature to the CBOR map object in
+        <xref target="example.unsigned"/>.
+        To avoid confusing CBOR <tt>map</tt> keys with cryptographic keys,
+        the former are referred to as "labels".
+        </t>
+        <ol>
+        <li>Add an empty CSF container (a CBOR map) to the unsigned CBOR map
+        using the CSF container label <tt>simple(99)</tt>.</li>
+        <li>Add the designated signature algorithm to the
+        CSF container using the CSF algorithm label (1).</li>
+        <li><em>Optional</em>. Add other signature meta data to the
+        CSF container. Not used in the example.</li>
+        <li><t>Generate a signature by invoking a (hypothetical)
+        signature method with the following arguments:</t>
+          <ul>
+          <li>the designated signature key.</li>
+          <li>the designated signature algorithm.</li>
+          <li>the <em>deterministic encoding</em> of the
+          current CBOR object in its <em>entirety</em>.
+          In the example that would be 
+          <tt>a301646461746102696d6f7265206461746120a10105</tt>,
+          if expressed in hex code.</li>
+          </ul>
+        </li>
+        <li>Add the returned signature value to the CSF container
+        using the CSF signature label (6).</li>
+        </ol>
+        <t>The result after the final step (using the parameters 
+        from <xref target="example.parameters"/>), should
+        match the following CBOR object:</t>
+<sourcecode name="Unsigned Data" type="cbor">
+<![CDATA[{
+  1: "data",
+  2: "more data",
+  simple(99): {
+    1: 5,
+    6: h'237e674c7be1818ddd7eaacf40ca80415b9ad816880751d2136c45385207420c'
+  }
+}]]></sourcecode>
+      <t>Note that the signature covers the <em>entire</em> CBOR object except for
+      the CSF signature value and label (6).</t>
+      </section>
+
+      <section anchor="example.validation">
+        <name>Validation Process</name>
+        <t>In order to validate the embedded signature created in the
+        <xref target="example.signing"/>,
+        the following steps are performed:</t>
+        <ol>
+        <li><t>Fetch a <em>reference</em> to the CSF container using the
+        CSF container label <tt>simple(99)</tt>.
+        Next perform the following operations using the reference:</t>
+        <ol>
+          <li>Retrieve the signature algorithm using the CSF algorithm label (1).</li>
+          <li>Retrieve the signature value using the CSF algorithm label (6).</li>
+          <li>Remove the CSF algorithm label (6) and its associated value.</li>
+        </ol>
+        <t>Now we should have exactly the same CBOR object as we had <em>before</em>
+        step #4 in <xref target="example.signing"/>.
+        That is:</t>
+<sourcecode name="Unsigned Data" type="cbor">
+<![CDATA[{
+  1: "data",
+  2: "more data",
+  -1: {
+    1: 5
+  }
+}]]></sourcecode>
+        </li>
+        <li><t>Validate the signature data by invoking a (hypothetical)
+        signature validation method with the following arguments:</t>
+          <ul>
+          <li>the designated signature key
+          (in the example taken from <xref target="example.parameters"/>).</li>
+          <li>the signature algorithm retrieved in step #1.</li>
+          <li>the signature value retrieved in step #1.</li>
+          <li>the <em>deterministic encoding</em> of the
+          current CBOR object in its <em>entirety</em>.</li>
+          </ul>
+        </li>
+        </ol>
+        <t>Note: this is a "bare-bones" validation process, lacking the ruggedness
+        of a real-world implementation.</t>
+      </section>
+
+      <section anchor="example.parameters">
+        <name>Example Parameters</name>
+        <t>The signature and validation processes depend on the
+        COSE <xref target="RFC9053"/> algorithm "HMAC&nbsp;256/256" and an
+        associated 256-bit key, here provided in hex code:</t>
+        <sourcecode name="Key" type="any">
+<![CDATA[7fdd851a3b9d2dafc5f0d00030e22b9343900cd42ede4948568a4a2ee655291a]]></sourcecode>
+      </section>
+
+      </section>
+
+      <section anchor="example.code">
+        <name>Code Example</name>
+        <t>Using a JavaScript implementation <xref target="CBOR.JS"/>
+        of <tt>CBOR::Core</tt>, together with Node.js
+        <xref target="NODE.JS"/>,
+        basic signature creation and validation supporting
+        the example in  <xref target="example.signature"/>,
+        could be performed by the following code:</t>
+        <sourcecode name="code.with.node.js" type="javascript">
+<![CDATA[// hmac.mjs
+import CBOR from 'cbor-object';
+const crypto = await import('node:crypto');
+
+// Application independent CSF constants
+const CSF_CONTAINER_LBL = CBOR.Simple(99);
+const CSF_ALG_LBL = CBOR.Int(1);
+const CSF_SIG_LBL = CBOR.Int(6);
+
+// COSE => Node.js algorithm translation
+const HASH_ALGORITHMS = new Map()
+    .set(5, "sha256").set(6, "sha384").set(7, "sha512");
+
+function hmac(coseAlg, key, data) {
+    let alg = HASH_ALGORITHMS.get(coseAlg);
+    if (alg === undefined) throw "Unknown alg: " + coseAlg;
+    return crypto.createHmac(alg, key).update(data).digest();
+}
+
+const SHARED_KEY = crypto.createSecretKey(
+    '7fdd851a3b9d2dafc5f0d00030e22b9343900cd42ede4948568a4a2ee655291a', 'hex');
+
+const APP_P1_LBL  = CBOR.Int(1);                   // Application label
+const APP_P2_LBL  = CBOR.Int(2);                   //        ""
+
+////////////////////////////////////
+// Create an unsigned CBOR object //
+////////////////////////////////////
+let object = CBOR.Map()
+    .set(APP_P1_LBL, CBOR.String("data"))          // Application data
+    .set(APP_P2_LBL, CBOR.String("more data"));    //        ""
+
+////////////////////////////////////////
+// Add a signature to the CBOR object //
+////////////////////////////////////////
+const COSE_ALG = 5;                                // Selected HMAC algorithm
+
+let csf = CBOR.Map()                               // Create CSF container and
+    .set(CSF_ALG_LBL, CBOR.Int(COSE_ALG));         // add COSE algorithm to it
+object.set(CSF_CONTAINER_LBL, csf);                // Add CSF container to object
+let sig = hmac(COSE_ALG,                           // Generate signature over
+               SHARED_KEY,                         // the current object
+               object.encode());                   // encode(): all we got so far
+csf.set(CSF_SIG_LBL, CBOR.Bytes(sig));             // Add signature to CSF container
+let cborBinary = object.encode();                  // Return CBOR as an Uint8Array
+        
+console.log(object.toString());                    // Show in Diagnostic Notation
+
+/////////////////////////////////////
+// Validate the signed CBOR object //
+/////////////////////////////////////
+object = CBOR.decode(cborBinary);                  // Decode CBOR object
+csf = object.get(CSF_CONTAINER_LBL);               // Get CSF container
+let alg = csf.get(CSF_ALG_LBL).getInt32();         // Get COSE algorithm
+let sigVal = csf.remove(CSF_SIG_LBL).getBytes();   // Get and REMOVE signature value
+let actualSig = hmac(alg,                          // Calculate signature over
+                     SHARED_KEY,                   // the current object
+                     object.encode());             // encode(): all but the signature
+if (CBOR.compareArrays(sigVal, actualSig)) {       // HMAC validation
+    throw "Signature did not validate";
+}
+// Validated object, access the "payload":
+let p1 = object.get(APP_P1_LBL).getString();       // p1 should now contain "data"]]></sourcecode>
+<t>
+Note that this code depends heavily on the API features
+outlined in <xref target="api.level.det"/>.
+</t>
+      </section>
+
+    </section>
+
+    <section anchor="backward.compatibility">
+      <name>Backward Compatibility</name>
+      <t>
+It is assumed that <em>most</em>
+systems using CBOR are able to process an <em>application specific</em>, 
+selection of CBOR data items that are encoded in compliance with
+<xref target="RFC8949"/>.  Since the deterministic encoding scheme
+mandated by <tt>CBOR::Core</tt>, also is compliant with <xref target="RFC8949"/>,
+there should be no major interoperability issues. 
+That is, if the previous assumption actually is correct &#x1f60f;
+</t>
+<t>
+However, in the <em>other</em> direction (<tt>CBOR::Core</tt> tools processing
+data from systems using "legacy" CBOR encoding schemes),
+the situation is likely to be considerably more challenging
+since deterministic encoding "by design" is <em>strict</em>.
+Due to this potential obstacle, implementers of <tt>CBOR::Core</tt> tools,
+are RECOMMENDED to offer <em>decoder</em> options that permit "relaxing"
+the rigidness of deterministic encoding with respect to:</t>
+<dl newline="true">
+<dt>Numbers:</dt>
+<dd>Numbers MUST still be compliant with <xref target="RFC8949"/>,
+including "Rule&nbsp;2" in section
+<xref target="RFC8949" section="4.2.2" sectionFormat="bare" format="default" 
+derivedLink="https://rfc-editor.org/rfc/rfc8949#section-4.2.2" derivedContent="RFC8949"/>.</dd>
+<dt>Sorted maps:</dt>
+<dd>Duplicate keys MUST still be rejected.</dd>
+</dl>
+<t>Note that regardless of the format of <em>decoded</em> CBOR data, compliant
+<tt>CBOR::Core</tt> implementations MUST internally maintain the deterministic encoding format.
+</t>
+<t>
+That is, a <tt>bigint</tt> encoded as <tt>c249000000000000000006</tt> would after decoding,
+be represented by an <tt>int</tt> encoded as <tt>06</tt>.
+See also <xref target="core.invalid"/>.</t>
+    </section>
+
+    <section anchor="tools.online">
+      <name>Compatible Online Tools</name>
+      <t>For testing and learning about <tt>CBOR::Core</tt>,
+      there are currently a number of compatible
+      online tools (subject to availability...).</t>
+      <dl newline="true">
+        <dt><xref target="PLAYGROUND"/>:</dt>
+        <dd>Browser-based CBOR "playground" </dd>
+        <dt><xref target="CSF-LAB"/>:</dt>
+        <dd>Server-based CBOR and <xref target="CSF"/> test system</dd>
+      </dl>
+    </section>
+
+    <section anchor="tools.implementations">
+      <name>Compatible Implementations</name>
+      <t>For using <tt>CBOR::Core</tt> in applications, there are
+      currently a number of compatible libraries.</t>
+      <dl newline="true">
+        <dt><xref target="CBOR.JS"/>:</dt>
+        <dd>JavaScript-based implementation supporting
+        browsers as well as <xref target="NODE.JS"/></dd>
+        <dt><xref target="OPENKEYSTORE"/>:</dt>
+        <dd>Java-based implementation that also 
+        supports <xref target="CSF"/></dd>
+        <dt><xref target="ANDROID-CBOR"/>:</dt>
+        <dd>Android Java-based implementation that also 
+        supports <xref target="CSF"/></dd>
+      </dl>
+    </section>
+
+    <section anchor="DocHistory" numbered="false">
+      <name>Document History</name>
+            <t><cref anchor="rfced">RFC Editor: Please remove this section before publication</cref></t>
+      <ul>
+        <li>00. First cut.</li>
+        <li>01. Editorial.  Changed order of columns in invalid encoding.</li>
+        <li>02. Editorial.  "unwrapped" changed to "non-wrapped".</li>
+        <li>
+        <t>03:</t>
+        <t>Tweaking the abstract.</t>
+        <t>Protocol Primitives sub-section added.</t>
+        <t>Diagnostic Notation sub-section added.</t>
+        <t>Updated CBOR Tool Requirements</t>
+        <t>Updated code example to actually use crypto</t>
+        <t>Updated Acknowledgements.</t>
+        <t>Updated Security Considerations.</t>
+        </li>
+        <li>
+        <t>04:</t>
+        <t>Minor addition in CBOR tools</t>
+        <t>Updated Acknowledgements</t>
+        </li>
+        <li>
+        <t>05:</t>
+        <t>Regression bug fix</t>
+        </li>
+        <li>
+        <t>06:</t>
+        <t>Media type added</t>
+        </li>
+        <li>
+        <t>07-&gt;00:</t>
+        <t>Renamed from "Universal CBOR" to "CBOR Base"</t>
+        <t>Design Goals added</t>
+        <t>CBOR Sequences added</t>
+        </li>
+        <li>
+        <t>01:</t>
+        <t>#7.nnn (simple) added</t>
+        <t>Language nits</t>
+        </li>
+        <li>
+        <t>02-&gt;00:</t>
+        <t>Renamed from "CBOR Base" to "CBOR Core"</t>
+        <t>Language nits</t>
+        <t>Miscellaneous Items added</t>
+        </li>
+        <li>
+        <t>01:</t>
+        <t>Language nits</t>
+        <t>&lt;table align="left"&gt;</t>
+        </li>
+        <li>
+        <t>02:</t>
+        <t>Editorial</t>
+        </li>
+        <li>
+        <t>03:</t>
+        <t>Added Date decoding/reserialization example</t>
+        </li>
+        <li>
+        <t>04:</t>
+        <t>Editorial</t>
+        <t>Added bstr and tstr to Protocol Primitives</t>
+        </li>
+        <li>
+        <t>05:</t>
+        <t>Enveloped =&gt; Embedded (signature)</t>
+        </li>
+        <li>
+        <t>06:</t>
+        <t>Updated Acknowledgements</t>
+        </li>
+        <li>
+        <t>07:</t>
+        <t>Dropped CBOR/c. Now it is just <tt>CBOR::Core</tt></t>
+        <t>Introduced API Level Considerations</t>
+        <t>Updated Date example, and added Rule 2 to Supporting Existing Systems</t>
+        </li>
+        <li>
+        <t>08:</t>
+        <t>Elaborated on "levels"</t>
+        <t>CBOR/Core =&gt; <tt>CBOR::Core</tt> (showing its close ties to software)</t>
+        </li>
+        <li>
+        <t>09:</t>
+        <t>Embedded signature sample =&gt; <tt>simple(99)</tt></t>
+        </li>
+        <li>
+        <t>10:</t>
+        <t>Editorial</t>
+        <t>CBOR Profile =&gt; CBOR Platform Profile</t>
+        </li>
+        <li>
+        <t>11:</t>
+        <t>Editorial</t>
+        <t>Supporting Existing Systems =&gt; Backward Compatibility</t>
+        </li>
+        <li>
+        <t>12:</t>
+        <t>NaN with payloads added</t>
+        </li>
+        <li>
+        <t>13:</t>
+        <t>Editorial</t>
+        <t>Non-finite number support</t>
+        </li>
+        <li>
+        <t>14:</t>
+        <t>Editorial</t>
+        </li>
+        <li>
+        <t>15:</t>
+        <t>Revised: Application/Encoding Level Considerations</t>
+        </li>
+        <li>
+        <t>16:</t>
+        <t>Editorial</t>
+        <t>Revised Abstract</t>
+        <t>Non-finite number deterministic encoding</t>
+        </li>
+        <li>
+        <t>17:</t>
+        <t>Editorial</t>
+        <t>Payload option added</t>
+        </li>
+        <li>
+        <t>18:</t>
+        <t>Editorial</t>
+        <t>Int53 added</t>
+        </li>
+      </ul>
+    </section>
+
+    <section anchor="Acknowledgements" numbered="false">
+      <name>Acknowledgements</name>
+<t>
+For verifying the correctness of the encoding scheme, the <xref target="CBOR.ME"/> 
+on-line CBOR tool, by the <xref target="RFC8949"/> author,
+Carsten Bormann, proved to be invaluable.
+</t>
+<t>
+Non-exhaustive list of people who directly (and sometimes indirectly) contributed
+to this specification include: Carsten Bormann,
+Alan DeKok, Vadim Goncharov, Joe Hildebrand, Eliot Lear,
+Laurence Lundblade, Rohan Mahy,
+Michael Richardson, Göran Selander, and Orie Steele.
+</t>
+    </section>
+    
+ </back>
+</rfc>

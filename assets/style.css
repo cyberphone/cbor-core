@@ -1,0 +1,233 @@
+body {
+  margin:10pt;
+  font-size:10pt;
+  font-family:Verdana,'Bitstream Vera Sans','DejaVu Sans',Arial,'Liberation Sans';
+}
+
+a {
+  color:#007fdd;
+  text-decoration:none;
+  font-weight:500;
+  outline:none;
+}
+
+h3 {
+  font-size: 1.3em;
+  font-weight:600;
+}
+
+code, kbd {
+  font-family:'DejaVu Sans Mono', monospace;
+  font-size: 1.0em;
+}
+
+kbd {
+  color:maroon;
+}
+
+h4 {
+  font-size: 1.1em;
+  margin-bottom:0.5em;
+}
+
+li {
+  padding-top:5pt;
+}
+
+.staticbox, .textbox {
+  box-sizing:border-box;
+  font-size:1.0em;
+  font-family: monospace;
+  width:100%;word-break:break-all;
+  border-width:1px;
+  border-style:solid;
+  border-color:grey;
+  padding:10pt;
+}
+
+.staticbox {
+  background:#f8f8f8;
+}
+
+.textbox {
+  background:#ffffea;
+}
+
+.header {
+  text-align:center;
+  font-weight:bolder;
+  font-size:12pt;
+  font-family:arial,verdana;
+}
+
+.sitefooter {
+  display:flex;
+  align-items:center;
+  border-width:1px 0 0 0;
+  border-style:solid;
+  position:absolute;
+  z-index:5;
+  left:0px;
+  bottom:0px;
+  right:0px;
+  padding:0.5em 0.7em;
+}
+
+.stdbtn, .multibtn {
+  cursor:pointer;
+  background:linear-gradient(to bottom, #eaeaea 14%,#fcfcfc 52%,#e5e5e5 89%);
+  border-width:1px;
+  border-style:solid;
+  border-color:#a9a9a9;
+  border-radius:5pt;
+  padding:3pt 10pt;
+}
+
+.sigparmbox {
+  border-radius:5pt;
+  padding:0 5pt 5pt 5pt;
+}
+
+.sigparmhead {
+  border-radius:3pt;
+  padding:3pt 5pt;
+  z-index:5;
+  position:relative;
+  top:-10pt;
+  margin-bottom:-3pt;
+}
+
+.defbtn {
+  border-radius:2pt;
+  display:inline-block;
+  cursor:pointer;
+  padding:1pt 3pt;
+  background-color:#f0f5fd;
+  border-color:#2a53ea;
+}
+
+.sigparmbox, .sigparmhead, .defbtn {
+  border-width:1px;
+  border-style:solid;
+}
+
+.sigparmhead, .sitefooter {
+  border-color:#c85000;
+  background-color:#fffcfc;
+}
+
+.sigparmbox {
+  border-color:#008040;
+  background-color:#fbfff7;
+}
+
+.stdbtn, .multibtn, .sigparmhead {
+  font-family:Arial,'Liberation Sans',Verdana,'Bitstream Vera Sans','DejaVu Sans';
+  font-size:10pt;
+}
+
+.stdbtn, .multibtn, .sigparmbox, .staticbox, .textbox {
+  box-shadow:3pt 3pt 3pt #d0d0d0;
+}
+
+.stdbtn {
+  display:inline-block;
+}
+
+.stdbtn {
+  margin-top:15pt;
+}
+
+.multibtn {
+  margin-top:12pt;
+  text-align:center;
+}
+
+
+.webpkitable {
+  display: inline-block;
+  border-collapse: collapse;
+  box-shadow: 0.2em 0.2em 0.2em #d0d0d0;
+  margin: 1em 1em 1em 0;
+}
+
+.webpkitable td {
+  background-color: #fffdf2;
+  padding: 0.4em 0.5em;
+  border-width: 1px;
+  border-style: solid;
+  border-color: black;
+}
+
+.webpkitable th {
+  padding: 0.4em 0.5em;
+  background-color: #f8f8f8;
+  text-align: center;
+  font-family: sans-serif;
+  font-size: 1.1em;
+  font-weight: bolder;
+  border-width: 1px;
+  border-style: solid;
+  border-color: black;
+}
+
+.webpkisvg, .webpkibox, .webpkicomment, .webpkihexbox {
+  display: inline-block;
+  box-shadow: 0.2em 0.2em 0.2em #d0d0d0;
+  border-width: 1px;
+  border-style: solid;
+  border-color: black;
+}
+
+.webpkicomment {
+  padding: 0.5em 1em;
+  background-color: #fafffa
+}
+
+.webpkilistspacing {
+  padding-bottom: 0.7em;
+}
+
+.webpkibox, .webpkihexbox {
+  padding: 0.8em 1em;
+  font-family: "Noto Mono",monospace;
+  margin: 1em;
+}
+
+.webpkisvg {
+  margin: 0 1em 1em 0;
+}
+
+.webpkibox {
+  white-space: nowrap;
+}
+
+.webpkifloat {
+  overflow-x: auto;
+}
+
+.webpkihexbox {
+  word-break: break-all;
+}
+
+.webpkicode {
+  color: maroon;
+}
+
+.webpkihighlite {
+  background: black;
+  color: white;
+}
+
+.webpkidiv {
+  background-color:white !important;
+  font-size:0.6em;
+}
+
+@media (max-width:768px) {
+
+  .stdbtn, .multibtn, .sigparmbox, .staticbox, .textbox {
+    box-shadow:2pt 2pt 2pt #d0d0d0;
+  }
+
+}
