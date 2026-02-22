@@ -12,7 +12,7 @@ can be implemented on quite different platforms, while still maintaining a high 
 `CBOR::Core` has also been described as "a better JSON".
 
 Interoperability is achieved by:
-- Strict adherance to the CBOR base specification [RFC 8949](https://www.rfc-editor.org/rfc/rfc8949.html)
+- Compatibility with the CBOR base specification: [RFC 8949](https://www.rfc-editor.org/rfc/rfc8949.html)
 - Fixed (deterministic) _encoding_ scheme, while optionally offering _decoding_ support for "legacy" CBOR systems
 - Strict type-checking at the API level as well as during decoding
 
@@ -80,7 +80,7 @@ a201fb4046d9999999999a0269486920746865726521
 
 ## On-line Testing
 
-On https://cyberphone.github.io/CBOR.js/doc/playground.html you will find a simple Web application,
+On https://cyberphone.github.io/cbor-core/doc/playground you will find a simple Web application,
 permitting testing the encoder, decoder, and diagnostic notation implementation.
 
 ## Deterministic Encoding
@@ -89,7 +89,7 @@ For maintaining cross-platform interoperability, `CBOR::Core` mandates
 fixed (aka "deterministic") encoding of CBOR objects.
 
 To shield developers from having to know the inner workings of deterministic encoding,
-a conforming `CBOR::Core` implementation performs
+conforming `CBOR::Core` implementation perform
 all necessary transformations _automatically_.  This for example means that if the 
 `set()` operations
 in the [Encoding&nbsp;Example](#encoding-example) were swapped, the generated CBOR would still be the same.
@@ -104,6 +104,7 @@ in the [Encoding&nbsp;Example](#encoding-example) were swapped, the generated CB
 |Python 3|https://github.com/cyberphone/CBOR.py#cborpy|
 
 Updated: 2026-02-20
+
 
 
 
