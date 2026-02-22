@@ -92,10 +92,10 @@ For maintaining cross-platform interoperability, `CBOR::Core` mandates
 a fixed (aka "deterministic") encoding of CBOR objects.
 
 To shield developers from having to know the inner workings of deterministic encoding,
-conforming `CBOR::Core` implementation perform
+conforming `CBOR::Core` implementations perform
 all necessary transformations _automagically_.  This for example means that if the 
 `set()` operations
-in the [Encoding&nbsp;Example](#encoding) were swapped, the generated CBOR would still be the same.
+in the [Encoding&nbsp;Example](#encoding) were swapped, the generated CBOR would remain the same.
 
 ## Known Compatible Implementations
 
@@ -107,6 +107,7 @@ in the [Encoding&nbsp;Example](#encoding) were swapped, the generated CBOR would
 |Python 3|https://github.com/cyberphone/CBOR.py#cborpy|
 
 Updated: 2026-02-22
+
 
 
 
