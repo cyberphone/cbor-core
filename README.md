@@ -92,7 +92,7 @@ To shield developers from having to know the inner workings of deterministic enc
 conforming `CBOR::Core` implementation perform
 all necessary transformations _automatically_.  This for example means that if the 
 `set()` operations
-in the [Encoding&nbsp;Example](#encoding-example) were swapped, the generated CBOR would still be the same.
+in the [Encoding&nbsp;Example](#encoding) were swapped, the generated CBOR would still be the same.
 
 ## Known Compatible Implementations
 
@@ -104,6 +104,7 @@ in the [Encoding&nbsp;Example](#encoding-example) were swapped, the generated CB
 |Python 3|https://github.com/cyberphone/CBOR.py#cborpy|
 
 Updated: 2026-02-20
+
 
 
 
