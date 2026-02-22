@@ -14,7 +14,7 @@ can be implemented on quite different platforms, while still maintaining a high 
 Interoperability is achieved by:
 - Strict adherance to the CBOR base specification [RFC 8949](https://www.rfc-editor.org/rfc/rfc8949.html)
 - Fixed (deterministic) _encoding_ scheme, while optionally offering _decoding_ support for "legacy" CBOR systems
-- Strict type checking at the API level as well as during decoding
+- Strict type-checking at the API level as well as during decoding
 
 ## Current Draft
 
@@ -23,8 +23,8 @@ https://datatracker.ietf.org/doc/draft-rundgren-cbor-core/
 
 ## Examples
 
-The following examples are supposed to give an idea of how `CBOR::Core` is to be used.
-Although the examples build a JavaScript implementation,
+The following simple examples are supposed to give you an idea of how `CBOR::Core` is to be used.
+Although the examples build on a JavaScript implementation,
 other implementations are supposed to be quite similar with respect to usage.
 
 As can be seen from the examples, there is rarely any need for developers to be experts in low-level details like CBOR serialization.
@@ -45,7 +45,7 @@ Note: there are no requirements "chaining" objects as shown above.
 ### Decoding Example
 
 ```javascript
-let map = CBOR.decode(cbor);
+let map = CBOR.decode(cbor);  // cbor: from the encoding example
 console.log(map.toString());  // Diagnostic notation
 ----------------------------------------------------
 {
@@ -78,12 +78,12 @@ console.log(CBOR.toHex(cbor));
 a201fb4046d9999999999a0269486920746865726521
 ```
 
-### On-line Testing
+## On-line Testing
 
 On https://cyberphone.github.io/CBOR.js/doc/playground.html you will find a simple Web application,
 permitting testing the encoder, decoder, and diagnostic notation implementation.
 
-### Deterministic Encoding
+## Deterministic Encoding
 
 For maintaining cross-platform interoperability, `CBOR::Core` mandates
 fixed (aka "deterministic") encoding of CBOR objects.
@@ -94,16 +94,17 @@ all necessary transformations _automatically_.  This for example means that if t
 `set()` operations
 in the [Encoding&nbsp;Example](#encoding-example) were swapped, the generated CBOR would still be the same.
 
-### Known Compatible Implementations
+## Known Compatible Implementations
 
 |Language|URL|
 |-|-|
 |JDK&nbsp;21+|https://github.com/cyberphone/openkeystore|
 |Android/Java|https://github.com/cyberphone/android-cbor|
 |JavaScript|https://github.com/cyberphone/CBOR.js#cborjs|
-|JavaScript|https://github.com/cyberphone/CBOR.py#cborpy|
+|Python 3|https://github.com/cyberphone/CBOR.py#cborpy|
 
 Updated: 2026-02-20
+
 
 
 
