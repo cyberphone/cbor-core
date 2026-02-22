@@ -14,7 +14,7 @@ can be implemented on quite different platforms, while still maintaining a high 
 Interoperability is achieved by:
 - Strict adherance to the CBOR base specification [RFC 8949](https://www.rfc-editor.org/rfc/rfc8949.html)
 - Fixed (deterministic) _encoding_ scheme, while optionally offering _decoding_ support for "legacy" CBOR systems
-- A base for creating simple but powerful APIs, limiting the need for developers to be experts in low-level details like serialization
+- Strict type checking at the API level as well as during decoding
 
 ## Current Draft
 
@@ -26,6 +26,8 @@ https://datatracker.ietf.org/doc/draft-rundgren-cbor-core/
 The following examples are supposed to give an idea of how `CBOR::Core` is to be used.
 Although the examples build a JavaScript implementation,
 other implementations are supposed to be quite similar with respect to usage.
+
+As can be seen from the examples, there is rarely any need for developers to be experts in low-level details like CBOR serialization.
 
 ### Encoding Example
 
@@ -81,50 +83,28 @@ a201fb4046d9999999999a0269486920746865726521
 On https://cyberphone.github.io/CBOR.js/doc/playground.html you will find a simple Web application,
 permitting testing the encoder, decoder, and diagnostic notation implementation.
 
-### NPM Version
-
-For usage with Node.js and Deno, an NPM version is available at https://npmjs.com/package/cbor-core 
-
 ### Deterministic Encoding
 
-For maintaining cross-platform interoperability, CBOR.js implements
-[Deterministic&nbsp;Encoding](https://cyberphone.github.io/CBOR.js/doc/index.html#main.deterministic).
+For maintaining cross-platform interoperability, `CBOR::Core` mandates
+fixed (aka "deterministic") encoding of CBOR objects.
 
-To shield developers from having to know the inner workings of deterministic encoding, CBOR.js performs
+To shield developers from having to know the inner workings of deterministic encoding,
+a conforming `CBOR::Core` implementation performs
 all necessary transformations _automatically_.  This for example means that if the 
-[set()](https://cyberphone.github.io/CBOR.js/doc/#cbor.map.set) operations
+`set()` operations
 in the [Encoding&nbsp;Example](#encoding-example) were swapped, the generated CBOR would still be the same.
 
-### Diagnostic Notation Support
-
-To simplify _logging_, _documentation_, and _debugging_, CBOR.js includes support for
-[Diagnostic&nbsp;Notation](https://cyberphone.github.io/CBOR.js/doc/index.html#main.diagnostic).
-
-However, diagnostic notation can also be used as _input_ for creating CBOR based _test data_ and
-_configuration files_ from text:
-```python
-cbor = CBOR.from_diagnostic("""{
-# Comments are also permitted
-  1: 45.7,
-  2: "Hi there!"
-}""").encode()
-
-print(cbor.hex())
---------------------------------------------
-a201fb4046d9999999999a0269486920746865726521
-```
-Aided by the model used for deterministic encoding, diagnostic notation becomes _bidirectional,_
-while remaining faithful to the native CBOR representation.
-
-### Other Compatible Implementations
+### Known Compatible Implementations
 
 |Language|URL|
 |-|-|
 |JDK&nbsp;21+|https://github.com/cyberphone/openkeystore|
 |Android/Java|https://github.com/cyberphone/android-cbor|
 |JavaScript|https://github.com/cyberphone/CBOR.js#cborjs|
+|JavaScript|https://github.com/cyberphone/CBOR.py#cborpy|
 
 Updated: 2026-02-20
+
 
 
 
