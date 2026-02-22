@@ -29,7 +29,7 @@ other implementations are supposed to be quite similar with respect to usage.
 
 As can be seen from the examples, there is rarely any need for developers to be experts in low-level details like CBOR serialization.
 
-### Encoding Example
+### Encoding
 
 ```javascript
 let cbor = CBOR.Map()
@@ -42,7 +42,7 @@ a201fb4046d9999999999a0269486920746865726521
 ```
 Note: there are no requirements "chaining" objects as shown above.
 
-### Decoding Example
+### Decoding
 
 ```javascript
 let map = CBOR.decode(cbor);  // cbor: from the encoding example
@@ -58,7 +58,7 @@ console.log('Value=' + map.get(CBOR.Int(1)).getFloat64());
 Value=45.7
 ```
 
-### Diagnostic Notation Support
+### Using Diagnostic Notation
 
 To simplify _logging_, _documentation_, and _debugging_, a conforming
 `CBOR::Core` implementation should also include support for the
@@ -104,6 +104,7 @@ in the [Encoding&nbsp;Example](#encoding-example) were swapped, the generated CB
 |Python 3|https://github.com/cyberphone/CBOR.py#cborpy|
 
 Updated: 2026-02-20
+
 
 
 
