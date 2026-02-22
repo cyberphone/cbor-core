@@ -1,3 +1,6 @@
+<a id="main"></a>
+&nbsp;
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/cbor-core.dark.svg">
   <img alt="CBOR is Great!" src="assets/cbor-core.svg">
@@ -9,12 +12,12 @@ This repository contains resources associated with the `CBOR::Core` project.
 
 The purpose of `CBOR::Core` is providing a specification that
 can be implemented on quite different platforms, while still maintaining a high level of interoperability.
-`CBOR::Core` has also been described as "a better JSON".
+`CBOR::Core` has also been described as "a better JSON" 😊
 
 Interoperability is achieved by:
-- Strict adherance to the CBOR base specification [RFC 8949](https://www.rfc-editor.org/rfc/rfc8949.html)
-- Fixed (deterministic) _encoding_ scheme, while optionally offering _decoding_ support for "legacy" CBOR systems
-- Strict type-checking at the API level as well as during decoding
+- Compatibility with the CBOR base specification: [RFC 8949](https://www.rfc-editor.org/rfc/rfc8949.html)
+- Deterministic _encoding_, while optionally offering _decoding_ support for "legacy" CBOR
+- Strict _type-checking_ at the API level as well as by the decoding process
 
 ## Current Draft
 
@@ -40,7 +43,7 @@ console.log(CBOR.toHex(cbor));
 ------------------------------
 a201fb4046d9999999999a0269486920746865726521
 ```
-Note: there are no requirements "chaining" objects as shown above.
+Note: there are no requirements "chaining" objects like above.
 
 ### Decoding
 
@@ -80,19 +83,19 @@ a201fb4046d9999999999a0269486920746865726521
 
 ## On-line Testing
 
-On https://cyberphone.github.io/CBOR.js/doc/playground.html you will find a simple Web application,
+On https://cyberphone.github.io/cbor-core/doc/playground/ you will find a simple Web application,
 permitting testing the encoder, decoder, and diagnostic notation implementation.
 
 ## Deterministic Encoding
 
 For maintaining cross-platform interoperability, `CBOR::Core` mandates
-fixed (aka "deterministic") encoding of CBOR objects.
+a fixed (aka "deterministic") encoding of CBOR objects.
 
 To shield developers from having to know the inner workings of deterministic encoding,
-a conforming `CBOR::Core` implementation performs
-all necessary transformations _automatically_.  This for example means that if the 
+conforming `CBOR::Core` implementations perform
+all necessary transformations _automagically_.  This for example means that if the 
 `set()` operations
-in the [Encoding&nbsp;Example](#encoding-example) were swapped, the generated CBOR would still be the same.
+in the [Encoding&nbsp;Example](#encoding) were swapped, the generated CBOR would remain the same.
 
 ## Known Compatible Implementations
 
@@ -103,7 +106,12 @@ in the [Encoding&nbsp;Example](#encoding-example) were swapped, the generated CB
 |JavaScript|https://github.com/cyberphone/CBOR.js#cborjs|
 |Python 3|https://github.com/cyberphone/CBOR.py#cborpy|
 
-Updated: 2026-02-20
+Updated: 2026-02-22
+
+
+
+
+
 
 
 
