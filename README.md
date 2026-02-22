@@ -1,3 +1,6 @@
+<a id="main"></a>
+&nbsp;
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/cbor-core.dark.svg">
   <img alt="CBOR is Great!" src="assets/cbor-core.svg">
@@ -13,8 +16,8 @@ can be implemented on quite different platforms, while still maintaining a high 
 
 Interoperability is achieved by:
 - Compatibility with the CBOR base specification: [RFC 8949](https://www.rfc-editor.org/rfc/rfc8949.html)
-- Fixed (deterministic) _encoding_ scheme, while optionally offering _decoding_ support for "legacy" CBOR systems
-- Strict type-checking at the API level as well as during decoding
+- Deterministic _encoding_, while optionally offering _decoding_ support for "legacy" CBOR
+- Strict _type-checking_ at the API level as well as by the decoding process
 
 ## Current Draft
 
@@ -80,17 +83,17 @@ a201fb4046d9999999999a0269486920746865726521
 
 ## On-line Testing
 
-On https://cyberphone.github.io/cbor-core/doc/playground you will find a simple Web application,
+On https://cyberphone.github.io/cbor-core/doc/playground/ you will find a simple Web application,
 permitting testing the encoder, decoder, and diagnostic notation implementation.
 
 ## Deterministic Encoding
 
 For maintaining cross-platform interoperability, `CBOR::Core` mandates
-fixed (aka "deterministic") encoding of CBOR objects.
+a fixed (aka "deterministic") encoding of CBOR objects.
 
 To shield developers from having to know the inner workings of deterministic encoding,
 conforming `CBOR::Core` implementation perform
-all necessary transformations _automatically_.  This for example means that if the 
+all necessary transformations _automagically_.  This for example means that if the 
 `set()` operations
 in the [Encoding&nbsp;Example](#encoding) were swapped, the generated CBOR would still be the same.
 
@@ -103,7 +106,8 @@ in the [Encoding&nbsp;Example](#encoding) were swapped, the generated CBOR would
 |JavaScript|https://github.com/cyberphone/CBOR.js#cborjs|
 |Python 3|https://github.com/cyberphone/CBOR.py#cborpy|
 
-Updated: 2026-02-20
+Updated: 2026-02-22
+
 
 
 
