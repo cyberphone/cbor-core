@@ -12,7 +12,7 @@ This repository contains resources associated with the `CBOR::Core` project.
 
 The purpose of `CBOR::Core` is providing a specification that
 can be implemented on quite different platforms, while still maintaining a high level of interoperability.
-`CBOR::Core` has also been described as "a better JSON".
+`CBOR::Core` has also been described as "a better JSON" 😊
 
 Interoperability is achieved by:
 - Compatibility with the CBOR base specification: [RFC 8949](https://www.rfc-editor.org/rfc/rfc8949.html)
@@ -43,7 +43,7 @@ console.log(CBOR.toHex(cbor));
 ------------------------------
 a201fb4046d9999999999a0269486920746865726521
 ```
-Note: there are no requirements "chaining" objects as shown above.
+Note: there are no requirements "chaining" objects like above.
 
 ### Decoding
 
@@ -107,6 +107,7 @@ in the [Encoding&nbsp;Example](#encoding) were swapped, the generated CBOR would
 |Python 3|https://github.com/cyberphone/CBOR.py#cborpy|
 
 Updated: 2026-02-22
+
 
 
 
