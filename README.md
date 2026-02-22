@@ -1,70 +1,79 @@
-<a id="cborpy"></a>
-&nbsp;
-
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/cbor-core.dark.svg">
   <img alt="CBOR is Great!" src="assets/cbor-core.svg">
 </picture>
 
-This repository contains a
-[Python API for CBOR](https://cyberphone.github.io/CBOR.py/doc/)
-and an associated _reference implementation_.
-The API loosely mimics the JavaScript "JSON" object by _exposing a single global object_,
-unsurprisingly named "CBOR".  To shield application developers 
-from low-level details like CBOR serialization, the API provides a set of high-level
-[Wrapper&nbsp;Objects](https://cyberphone.github.io/CBOR.py/doc/#main.wrappers)
-that serve as a "bridge" between CBOR and Python.
+This repository contains resources associated with the `CBOR::Core` project.
 
-The wrapper objects are used for _encoding_ CBOR objects,
-as well as being the result of CBOR _decoding_. The wrapper concept also enables
-strict _type-checking_.
+## Design Rationale
 
-### Design Rationale
+The purpose of `CBOR::Core` is providing a specification that
+can be implemented on quite different platforms, while still maintaining a high level of interoperability.
+`CBOR::Core` has also been described as "a better JSON".
 
-The described API builds on the 
-[CBOR::Core](https://www.ietf.org/archive/id/draft-rundgren-cbor-core-25.html)
-cross-platform profile.
+Interoperability is achieved by:
+- Strict adherance to the CBOR base specification [RFC 8949](https://www.rfc-editor.org/rfc/rfc8949.html)
+- Fixed (deterministic) _encoding_ scheme, while optionally offering _decoding_ support for "legacy" CBOR systems
+- A base for creating simple but powerful APIs, limiting the need for developers to be experts in low-level details like serialization
 
-Due to a desire maintaining interoperability between different platforms,
-the API "by design" does not address Python specific
-types like binary data beyond `Uint8Array`.
-See also [CBOR&nbsp;Everywhere](https://github.com/cyberphone/cbor-everywhere/).
+## Current Draft
 
-### "CBOR" Components
-- Self-encoding wrapper objects
-- Decoder
-- Diagnostic Notation decoder
-- Utility methods
+The most recent draft can be found at:
+https://datatracker.ietf.org/doc/draft-rundgren-cbor-core/
+
+## Examples
+
+The following examples are supposed to give an idea of how `CBOR::Core` is to be used.
+Although the examples build a JavaScript implementation,
+other implementations are supposed to be quite similar with respect to usage.
 
 ### Encoding Example
 
-```python
-cbor = CBOR.Map()\
-           .set(CBOR.Int(1), CBOR.Float(45.7))\
-           .set(CBOR.Int(2), CBOR.String("Hi there!")).encode()
+```javascript
+let cbor = CBOR.Map()
+               .set(CBOR.Int(1), CBOR.Float(45.7))
+               .set(CBOR.Int(2), CBOR.String("Hi there!")).encode();
 
-print(cbor.hex())
---------------------------------------------
+console.log(CBOR.toHex(cbor));
+------------------------------
 a201fb4046d9999999999a0269486920746865726521
 ```
-Note: there are no requirements "chaining" objects as shown above; items
-may be added to [CBOR.Map](https://cyberphone.github.io/CBOR.js/doc/#wrapper.cbor.map)
-and [CBOR.Array](https://cyberphone.github.io/CBOR.js/doc/#wrapper.cbor.array) objects in separate steps.
+Note: there are no requirements "chaining" objects as shown above.
 
 ### Decoding Example
 
-```python
-map = CBOR.decode(cbor)
-print(map.to_string())  # Diagnostic notation
----------------------------------------------
+```javascript
+let map = CBOR.decode(cbor);
+console.log(map.toString());  // Diagnostic notation
+----------------------------------------------------
 {
   1: 45.7,
   2: "Hi there!"
 }
 
-print('Value={:g}'.format(map.get(CBOR.Int(1)).get_float64()))
---------------------------------------------------------------
+console.log('Value=' + map.get(CBOR.Int(1)).getFloat64());
+----------------------------------------------------------
 Value=45.7
+```
+
+### Diagnostic Notation Support
+
+To simplify _logging_, _documentation_, and _debugging_, a conforming
+`CBOR::Core` implementation should also include support for the
+text-based CBOR-format known as "Diagnostic&nbsp;Notation".
+
+However, diagnostic notation can also be used as _input_ for creating CBOR based _test data_ and
+_configuration files_ from text:
+```javascript
+let cbor = CBOR.fromDiagnostic(`{
+# Comments are also permitted
+  1: 45.7,
+  2: "Hi there!"
+}`).encode();
+
+console.log(CBOR.toHex(cbor));
+------------------------------
+a201fb4046d9999999999a0269486920746865726521
 ```
 
 ### On-line Testing
@@ -116,6 +125,7 @@ while remaining faithful to the native CBOR representation.
 |JavaScript|https://github.com/cyberphone/CBOR.js#cborjs|
 
 Updated: 2026-02-20
+
 
 
 
