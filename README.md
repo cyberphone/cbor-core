@@ -11,7 +11,8 @@ This repository contains resources associated with the `CBOR::Core` project.
 ## Design Rationale
 
 The purpose of `CBOR::Core` is providing a specification that
-can be implemented on quite different platforms, while still maintaining a high level of interoperability.
+can be implemented on quite different platforms, while maintaining a high level of interoperability,
+including with respect to API.
 `CBOR::Core` has also been described as "a better JSON" 😊
 
 Interoperability is achieved by:
@@ -26,11 +27,9 @@ https://datatracker.ietf.org/doc/draft-rundgren-cbor-core/
 
 ## Examples
 
-The following _simple_ examples are supposed to give you an idea of how `CBOR::Core` is to be used.
+The following _simple_ examples are supposed to give an idea of how `CBOR::Core` is to be used.
 Although the examples build on a JavaScript implementation,
 other implementations are supposed to be quite similar with respect to usage.
-
-As can be seen from the examples, there is rarely any need for developers to become experts in low-level details like CBOR serialization.
 
 ### Encoding
 
@@ -97,7 +96,7 @@ all necessary transformations _automagically_.  This for example means that if t
 `set()` operations
 in the [Encoding&nbsp;Example](#encoding) were swapped, the generated CBOR would remain the same.
 
-## Known Compatible Implementations
+## Known CBOR::Core Implementations
 
 |Language|URL|
 |-|-|
