@@ -28,7 +28,7 @@ https://datatracker.ietf.org/doc/draft-rundgren-cbor-core/
 ## Examples
 
 The following _simple_ examples are supposed to give an idea of how `CBOR::Core` is to be used.
-Although the examples build on a JavaScript implementation,
+Although the examples build on a specific JavaScript solution,
 other implementations are supposed to be quite similar with respect to usage.
 
 ### Encoding
