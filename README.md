@@ -34,9 +34,12 @@ other implementations are supposed to be quite similar with respect to usage.
 ### Encoding
 
 ```javascript
+const TEMPERATURE_KEY = CBOR.Int(1);
+const GREETINGS_KEY = CBOR.Int(2);
+
 let cbor = CBOR.Map()
-               .set(CBOR.Int(1), CBOR.Float(45.7))
-               .set(CBOR.Int(2), CBOR.String("Hi there!")).encode();
+               .set(TEMPERATURE_KEY, CBOR.Float(45.7))
+               .set(GREETINGS_KEY, CBOR.String("Hi there!")).encode();
 
 console.log(CBOR.toHex(cbor));
 ------------------------------
@@ -55,8 +58,8 @@ console.log(map.toString());  // Diagnostic notation
   2: "Hi there!"
 }
 
-console.log('Value=' + map.get(CBOR.Int(1)).getFloat64());
-----------------------------------------------------------
+console.log('Value=' + map.get(TEMPERATURE_KEY).getFloat64());
+--------------------------------------------------------------
 Value=45.7
 ```
 
