@@ -11,7 +11,7 @@ This repository contains resources associated with the `CBOR::Core` project.
 ## Design Rationale
 
 The purpose of `CBOR::Core` is providing a specification that
-can be implemented on quite different platforms, while maintaining a high level of interoperability,
+can be supported by quite different platforms, while maintaining a high level of interoperability,
 including with respect to API.
 `CBOR::Core` has also been described as "a better JSON" 😊
 
