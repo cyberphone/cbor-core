@@ -83,7 +83,7 @@ a201fb4046d9999999999a0269486920746865726521
 ## On-line Testing
 
 On https://cyberphone.github.io/cbor-core/playground/ you will find a simple Web application,
-permitting testing the encoder, decoder, and diagnostic notation implementation.
+permitting testing a conformant encoder, decoder, and diagnostic notation implementation.
 
 ## Deterministic Encoding
 
