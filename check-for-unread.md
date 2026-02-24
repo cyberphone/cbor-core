@@ -1,3 +1,14 @@
+## Check for Unread
+
+`checkForUnread` is a `CBOR::Core` method that throws an exception if a CBOR item
+(including possible child items), has not been read.
+
+The primary purpose of `checkForUnread` is for verifying that the sender and receiver abide to the same "contract".
+
+On a high level the algorithm should flag all unread items except for empty `map` and `array` objects.  Note that a `map` or `array` `get()` operation only _locates_ an object, not read it.
+
+The following shows a complete implementation of the algoritm expressed in Python (including using Python naming conventions...):
+```python
 class CBOR:
 
     @staticmethod
@@ -101,8 +112,11 @@ class CBOR:
 
         def _is_primitive(self):
             return True  # Overrides is_primitive in CborObject
+```
+Support for `checkForUnread` more or less presumes an object-oriented approach.
 
-
+The following test code shows how the `checkForUnread` method can be used:
+```python
 def test(statement, access, ok=False):
     res = eval(statement)
     try:
@@ -138,3 +152,4 @@ res.get(2).add(CBOR.Primitive(700))
 assert res.get(2).get(0).read_primitive() == 700
 assert res.get(1).read_primitive() == "Hi!"
 res.check_for_unread() # all is good
+```
