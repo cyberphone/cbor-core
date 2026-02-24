@@ -7,7 +7,7 @@ The primary purpose of `checkForUnread` is for verifying that the sender and rec
 
 On a high level the algorithm should flag all unread items except for empty `map` and `array` objects.  Note that a `map` or `array` `get()` operation only _locates_ an object, not read it.
 
-The following shows a complete implementation of the algoritm expressed in Python (including using Python naming conventions...):
+The following shows a complete implementation of the algorithm expressed in Python (including using Python naming conventions...):
 ```python
 class CBOR:
 
