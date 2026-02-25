@@ -12,20 +12,20 @@ class CBOR:
     class CborObject(object):
 
         # Public methods
-        def read_primitive(self):
-            if not isinstance(self, CBOR.Primitive):
-                CBOR._error("Unexpected: {0}".format(type(self).__name__))
-            self.read_flag = True
-            return self.value
-
         def check_for_unread(self):
-            self._traverse(None if isinstance(self, CBOR.Primitive) else self)
+            self._mark_as_read(self)
+            self._traverse(None)
 
         # Constructor
-        def __init__(self, read_flag=True):
-            self.read_flag = read_flag
+        def __init__(self):
+            self.read_flag = False
 
         # Private methods
+        def _mark_as_read(self, object):
+            if not isinstance(object, CBOR.Primitive):
+                object.read_flag = True
+            return object
+
         def _traverse(self, holding_object):
             match type(self).__name__:
                 case "Map":
@@ -35,8 +35,10 @@ class CBOR:
                 case "Tag":
                     self.object._traverse(self)
             if not self.read_flag:
-                primitive = "{0} with value={1}, was not read" \
-                            .format(type(self).__name__, self.value)
+                primitive = type(self).__name__
+                if isinstance(self, CBOR.Primitive):
+                    primitive += " with value={}".format(self.value)
+                primitive += " was not read"
                 if holding_object:
                     if isinstance(holding_object, CBOR.Array):
                         holder = "Array element of type"
@@ -61,7 +63,7 @@ class CBOR:
             CBOR._is_int(key)
             for i in self.entries:
                 if i.key == key:
-                    return i.value
+                    return self._mark_as_read(i.value)
 
         class Entry:
             def __init__(self, key, value):
@@ -78,7 +80,7 @@ class CBOR:
             return self
 
         def get(self, index):
-            return self.elements[CBOR._is_int(index)]
+            return self._mark_as_read(self.elements[CBOR._is_int(index)])
                 
     class Tag(CborObject):
         def __init__(self, tag_number, object):
@@ -87,53 +89,85 @@ class CBOR:
             self.object = object
 
         def get(self):
-            return self.object
+            return self._mark_as_read(self.object)
 
     # Only int and tstr
     class Primitive(CborObject):
         def __init__(self, value):
-            super().__init__(False)
+            super().__init__()
             if not (isinstance(value, int) or isinstance(value, str)):
                 CBOR._error("'int' or 'str' primitive expected")
             self.value = value
 
+        def read_primitive(self):
+            self.read_flag = True
+            return self.value
 
-def test(statement, access, ok):
+
+
+def test(statement, access, message=None):
+    # print(":" + statement)
+    fail = message is not None
+    error = ""
     res = eval(statement)
     try:
         res.check_for_unread()
-        assert access is None and ok, statement
+        assert access is None and not fail, statement
     except Exception as e:
-        # print(statement + " " + repr(e))
-        assert access or not ok, statement
-        assert repr(e).find("never read") < 0
+        error = repr(e)
+        # print(statement + " " + error)
+        assert access or fail, statement
+        assert error.find("never read") < 0
     if access:
         try:
             eval("res." + access)
             res.check_for_unread()
-            assert ok, statement
+            assert not fail, statement
         except Exception as e:
-            # print(statement + " " + repr(e))
-            assert not ok, statement
-            assert repr(e).find("never read") < 0
+            error = repr(e)
+            # print(statement + " " + error)
+            assert fail, statement
+            assert error.find("never read") < 0
+    if message is not None and (error.find(message) < 0):
+        assert False, "not" + repr(message) + error
 
-test("CBOR.Array()", None, True)
-test("CBOR.Map()", None, True)
-test("CBOR.Tag(45, CBOR.Map())", "get()", True)
-test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Primitive(6)))", "get().get(1)", False)
-test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Primitive(6)))", "get().get(1).read_primitive()", True)
-test("CBOR.Array().add(CBOR.Tag(45, CBOR.Map()))", "get(0)", False)
-test("CBOR.Array().add(CBOR.Tag(45, CBOR.Map()))", "get(0).get()", True)
-test("CBOR.Array().add(CBOR.Tag(45, CBOR.Primitive(6)))", "get(0).get()", False)
-test("CBOR.Array().add(CBOR.Tag(45, CBOR.Primitive(6)))", "get(0).get().read_primitive()", True)
-test("CBOR.Array().add(CBOR.Primitive(6))", "get(0)", False)
-test("CBOR.Array().add(CBOR.Primitive(6))", "get(0).read_primitive()", True)
-test("CBOR.Map().set(1, CBOR.Array())", None, False)
-test("CBOR.Map().set(1, CBOR.Array())", "get(1)", True)
-test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Primitive(6)))", "get().get(1).read_primitive()", True)
-test("CBOR.Array().add(CBOR.Array())", "get(0)", True)
-test("CBOR.Array().add(CBOR.Array())", None, False)
-test("CBOR.Primitive(6)", "read_primitive()", True)
+
+test("CBOR.Array()", None)
+test("CBOR.Map()", None)
+test("CBOR.Tag(45, CBOR.Map())", "get()")
+
+test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Primitive(6)))", "get().get(1)",
+     'Map key 1 with argument Primitive with value=6 was not read')
+
+test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Primitive(6)))", "get().get(1).read_primitive()")
+test("CBOR.Array().add(CBOR.Tag(45, CBOR.Map()))", "get(0)",
+     'Tagged object 45 of type Map was not read')
+
+test("CBOR.Array().add(CBOR.Tag(45, CBOR.Map()))", "get(0).get()")
+
+test("CBOR.Array().add(CBOR.Tag(45, CBOR.Primitive(6)))", "get(0).get()",
+     'Tagged object 45 of type Primitive with value=6 was not read')
+
+test("CBOR.Array().add(CBOR.Tag(45, CBOR.Primitive(6)))", "get(0).get().read_primitive()")
+
+test("CBOR.Array().add(CBOR.Primitive(6))", "get(0)",
+     'Array element of type Primitive with value=6 was not read')
+
+test("CBOR.Array().add(CBOR.Primitive(6))", "get(0).read_primitive()")
+
+test("CBOR.Map().set(1, CBOR.Array())", None,
+     'Map key 1 with argument Array was not read')
+
+test("CBOR.Map().set(1, CBOR.Array())", "get(1)")
+
+test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Primitive(6)))", "get().get(1).read_primitive()")
+
+test("CBOR.Array().add(CBOR.Array())", "get(0)")
+
+test("CBOR.Array().add(CBOR.Array())", None,
+     'Array element of type Array was not read')
+
+test("CBOR.Primitive(6)", "read_primitive()")
 
 # a slightly more elaborate example
 res = CBOR.Map().set(2, CBOR.Array()).set(1, CBOR.Primitive("Hi!"))
