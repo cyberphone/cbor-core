@@ -30,11 +30,11 @@ class CBOR:
         def _traverse(self, holding_object):
             match type(self).__name__:
                 case "Map":
-                    for entry in self.entries: entry.value._traverse(entry.key)
+                    for entry in self._entries: entry.value._traverse(entry.key)
                 case "Array":
-                    for element in self.elements: element._traverse(self)
+                    for element in self._elements: element._traverse(self)
                 case "Tag":
-                    self.object._traverse(self)
+                    self._object._traverse(self)
             if not self._read_flag:
                 problem_item = type(self).__name__
                 if self._is_primitive(self):
@@ -46,7 +46,7 @@ class CBOR:
                         holder = "Array element of type"
                     elif isinstance(holding_object, CBOR.Tag):
                         holder = "Tagged object {0} of type".format(
-                            holding_object.tag_number)
+                            holding_object._tag_number)
                     else:
                         holder = "Map key {0} with argument".format(holding_object)
                     problem_item = holder + " " + problem_item
@@ -55,15 +55,15 @@ class CBOR:
     class Map(_CborObject):
         def __init__(self):
             super().__init__()
-            self.entries = list()
+            self._entries = list()
 
         def set(self, key, object):
-            self.entries.append(CBOR.Map.Entry(CBOR._is_int(key), object))
+            self._entries.append(CBOR.Map.Entry(CBOR._is_int(key), object))
             return self
 
         def get(self, key):
             CBOR._is_int(key)
-            for entry in self.entries:
+            for entry in self._entries:
                 if entry.key == key:
                     return self._mark_as_read(entry.value)
             CBOR._error("Key {0} not found".format(key))
@@ -76,23 +76,23 @@ class CBOR:
     class Array(_CborObject):
         def __init__(self):
             super().__init__()
-            self.elements = list()
+            self._elements = list()
 
         def add(self, object):
-            self.elements.append(object)
+            self._elements.append(object)
             return self
 
         def get(self, index):
-            return self._mark_as_read(self.elements[CBOR._is_int(index)])
+            return self._mark_as_read(self._elements[CBOR._is_int(index)])
                 
     class Tag(_CborObject):
         def __init__(self, tag_number, object):
             super().__init__()
-            self.tag_number = tag_number
-            self.object = object
+            self._tag_number = tag_number
+            self._object = object
 
         def get(self):
-            return self._mark_as_read(self.object)
+            return self._mark_as_read(self._object)
 
     class String(_CborObject):
         def __init__(self, string):
@@ -129,7 +129,7 @@ def test(statement, access, message=None):
         error = repr(e)
         # print(statement + " " + error)
         assert access or fail, statement
-        assert error.find("never read") < 0
+        assert error.find("not read") > 0
     if access:
         try:
             eval("res." + access)
@@ -139,7 +139,7 @@ def test(statement, access, message=None):
             error = repr(e)
             # print(statement + " " + error)
             assert fail, statement
-            assert error.find("never read") < 0
+            assert error.find("not read") > 0
     if message is not None and (error.find(message) < 0):
         assert False, "not" + repr(message) + error
 

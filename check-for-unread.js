@@ -29,10 +29,10 @@ class CBOR {
 
         // Private methods
         _markAsRead(object) {
-            if (this._is_primitive(object)) {
-                return object;
+            if (!this._is_primitive(object)) {
+                object._readFlag = true;
             }
-            object._readFlag = true;
+            return object;
         }
 
         _is_primitive(object) {
@@ -47,12 +47,12 @@ class CBOR {
                     });
                     break;
                 case "Array":
-                    this.elements.forEach(element => {
+                    this._elements.forEach(element => {
                          element.#traverse(this);
                     });
                     break;
                 case "Tag":
-                    this.object.#traverse(this);
+                    this._object.#traverse(this);
                     break;
             }
             if (!this._readFlag) {
@@ -66,7 +66,7 @@ class CBOR {
                     if (holding_object instanceof CBOR.Array) {
                         holder = "Array element of type";
                     } else if (holding_object instanceof CBOR.Tag) {
-                        holder = "Tagged object " + holding_object.tag_number + " of type";
+                        holder = "Tagged object " + holding_object._tag_number + " of type";
                     } else {
                         holder = "Map key " + holding_object + " with argument";
                     }
@@ -109,28 +109,28 @@ class CBOR {
     static Array = class extends CBOR.CborObject {
         constructor() {
             super();
-            this.elements = [];
+            this._elements = [];
         }
 
         add(object) {
-            this.elements.push(object);
+            this._elements.push(object);
             return this;
         }
 
         get(index) {
-            return this._markAsRead(this.elements[CBOR.#isInt(index)]);
+            return this._markAsRead(this._elements[CBOR.#isInt(index)]);
         }
     }
                 
     static Tag = class extends CBOR.CborObject {
         constructor(tag_number, object) {
             super();
-            this.tag_number = tag_number;
-            this.object = object;
+            this._tag_number = tag_number;
+            this._object = object;
         }
 
         get() {
-            return this._markAsRead(this.object);
+            return this._markAsRead(this._object);
         }
     }
 
@@ -185,7 +185,11 @@ class CBOR {
     static String = new Proxy(CBOR.String, new CBOR.#handler(1));
 }
 
-function assert(expression, explanation) {
+//////////////////////////////
+//          TEST            //
+//////////////////////////////
+
+function assertTrue(expression, explanation) {
     if (!expression) {
         throw new Error(explanation);
     }
@@ -198,27 +202,27 @@ function test(statement, access, message) {
     let res = eval(statement);
     try {
         res.checkForUnread();
-        assert(!access && !fail, statement);
+        assertTrue(!access && !fail, statement);
     } catch (e) {
         error = e.toString();
         // console.log(statement + " " + error);
-        assert(access || fail, statement);
-        assert(error.includes("not read"));
+        assertTrue(access || fail, statement);
+        assertTrue(error.includes("not read"));
     }
     if (access) {
         try {
             eval("res." + access)
             res.checkForUnread();
-            assert(!fail, statement);
+            assertTrue(!fail, statement);
         } catch (e) {
             error = e.toString();
             // console.log(statement + " " + error)
-            assert(fail, statement);
-            assert(error.includes("not read"));
+            assertTrue(fail, statement);
+            assertTrue(error.includes("not read"));
         }
     }
     if (!message && error.includes(message)) {
-        assert(false, "not" + message + error);
+        assertTrue(false, "not" + message + error);
     }
 }
 
@@ -262,6 +266,6 @@ test("CBOR.Int(6)", "getInt()")
 // a slightly more elaborate example
 res = CBOR.Map().set(2, CBOR.Array()).set(1, CBOR.String("Hi!"))
 res.get(2).add(CBOR.Int(700))
-assert(res.get(2).get(0).getInt() == 700)
-assert(res.get(1).getString() == "Hi!")
+assertTrue(res.get(2).get(0).getInt() == 700)
+assertTrue(res.get(1).getString() == "Hi!")
 res.checkForUnread() // all is good
