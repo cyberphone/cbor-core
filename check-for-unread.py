@@ -15,6 +15,7 @@ class CBOR:
 
         # Common methods
         def check_for_unread(self):
+            # Top-level Array, Map, and Tag container object marked as read.
             self._mark_as_read(self)
             self._traverse(None)
 
@@ -45,10 +46,10 @@ class CBOR:
                     if isinstance(holding_object, CBOR.Array):
                         holder = "Array element of type"
                     elif isinstance(holding_object, CBOR.Tag):
-                        holder = "Tagged object {0} of type".format(
+                        holder = "Tagged object {} of type".format(
                             holding_object._tag_number)
                     else:
-                        holder = "Map key {0} with argument".format(holding_object)
+                        holder = "Map key {} with argument".format(holding_object)
                     problem_item = holder + " " + problem_item
                 CBOR._error(problem_item)
 
