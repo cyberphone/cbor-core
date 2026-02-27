@@ -32,7 +32,7 @@ class CBOR:
                 case "Map":
                     for entry in self._entries: entry.value._traverse(entry.key)
                 case "Array":
-                    for element in self._elements: element._traverse(self)
+                    for object in self._objects: object._traverse(self)
                 case "Tag":
                     self._object._traverse(self)
             if not self._read_flag:
@@ -76,14 +76,14 @@ class CBOR:
     class Array(_CborObject):
         def __init__(self):
             super().__init__()
-            self._elements = list()
+            self._objects = list()
 
         def add(self, object):
-            self._elements.append(object)
+            self._objects.append(object)
             return self
 
         def get(self, index):
-            return self._mark_as_read(self._elements[CBOR._is_int(index)])
+            return self._mark_as_read(self._objects[CBOR._is_int(index)])
                 
     class Tag(_CborObject):
         def __init__(self, tag_number, object):

@@ -47,8 +47,8 @@ class CBOR {
                     });
                     break;
                 case "Array":
-                    this._elements.forEach(element => {
-                         element.#traverse(this);
+                    this._objects.forEach(object => {
+                         object.#traverse(this);
                     });
                     break;
                 case "Tag":
@@ -109,16 +109,16 @@ class CBOR {
     static Array = class extends CBOR.CborObject {
         constructor() {
             super();
-            this._elements = [];
+            this._objects = [];
         }
 
         add(object) {
-            this._elements.push(object);
+            this._objects.push(object);
             return this;
         }
 
         get(index) {
-            return this._markAsRead(this._elements[CBOR.#isInt(index)]);
+            return this._markAsRead(this._objects[CBOR.#isInt(index)]);
         }
     }
                 
