@@ -42,7 +42,7 @@ class CBOR:
                     problem_item += " with value={}".format(
                         self.value if isinstance(self, CBOR.Int) else self.string)
                 problem_item += " was never read"
-                if holding_object:
+                if holding_object is not None:
                     if isinstance(holding_object, CBOR.Array):
                         holder = "Array element of type"
                     elif isinstance(holding_object, CBOR.Tag):
