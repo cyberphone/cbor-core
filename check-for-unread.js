@@ -29,14 +29,14 @@ class CBOR {
 
         // Private methods
         _markAsRead(object) {
-            if (!this._is_primitive(object)) {
+            if (!object.#isPrimitive()) {
                 object._readFlag = true;
             }
             return object;
         }
 
-        _is_primitive(object) {
-            return object instanceof CBOR.Int || object instanceof CBOR.String;
+        #isPrimitive() {
+            return this instanceof CBOR.Int || this instanceof CBOR.String;
         }
 
         #traverse(holding_object) {
@@ -57,7 +57,7 @@ class CBOR {
             }
             if (!this._readFlag) {
                 let problem_item = this.constructor.name;
-                if (this._is_primitive(this)) { 
+                if (this.#isPrimitive()) { 
                     problem_item += " with value=" + this.value;
                 }
                 problem_item += " was never read";

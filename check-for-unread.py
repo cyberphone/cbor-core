@@ -20,12 +20,12 @@ class CBOR:
 
         # Private methods
         def _mark_as_read(self, object):
-            if not self._is_primitive(object):
+            if not object._is_primitive():
                 object._read_flag = True
             return object
         
-        def _is_primitive(self, object):
-            return isinstance(object, CBOR.Int) or isinstance(object, CBOR.String)
+        def _is_primitive(self):
+            return isinstance(self, CBOR.Int) or isinstance(self, CBOR.String)
 
         def _traverse(self, holding_object):
             match type(self).__name__:
@@ -37,7 +37,7 @@ class CBOR:
                     self._object._traverse(self)
             if not self._read_flag:
                 problem_item = type(self).__name__
-                if self._is_primitive(self):
+                if self._is_primitive():
                     problem_item += " with value={}".format(
                         self.value if isinstance(self, CBOR.Int) else self.string)
                 problem_item += " was never read"
