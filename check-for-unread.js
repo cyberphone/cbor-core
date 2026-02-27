@@ -60,7 +60,7 @@ class CBOR {
                 if (this._is_primitive(this)) { 
                     problem_item += " with value=" + this.value;
                 }
-                problem_item += " was not read";
+                problem_item += " was never read";
                 let holder;
                 if (holding_object) {
                     if (holding_object instanceof CBOR.Array) {
@@ -207,7 +207,7 @@ function test(statement, access, message) {
         error = e.toString();
         // console.log(statement + " " + error);
         assertTrue(access || fail, statement);
-        assertTrue(error.includes("not read"));
+        assertTrue(error.includes("never read"));
     }
     if (access) {
         try {
@@ -218,7 +218,7 @@ function test(statement, access, message) {
             error = e.toString();
             // console.log(statement + " " + error)
             assertTrue(fail, statement);
-            assertTrue(error.includes("not read"));
+            assertTrue(error.includes("never read"));
         }
     }
     if (!message && error.includes(message)) {
@@ -231,26 +231,26 @@ test("CBOR.Map()", null)
 test("CBOR.Tag(45, CBOR.Map())", "get()")
 
 test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Int(6)))", "get().get(1)",
-     "Map key 1 with argument Int with value=6 was not read")
+     "Map key 1 with argument Int with value=6 was never read")
 
 test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Int(6)))", "get().get(1).getInt()")
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Map()))", "get(0)",
-     "Tagged object 45 of type Map was not read")
+     "Tagged object 45 of type Map was never read")
 
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Map()))", "get(0).get()")
 
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Int(6)))", "get(0).get()",
-     "Tagged object 45 of type Int with value=6 was not read")
+     "Tagged object 45 of type Int with value=6 was never read")
 
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Int(6)))", "get(0).get().getInt()")
 
 test("CBOR.Array().add(CBOR.String('Hi!'))", "get(0)",
-     "Array element of type String with value=Hi! was not read")
+     "Array element of type String with value=Hi! was never read")
 
 test("CBOR.Array().add(CBOR.Int(6))", "get(0).getInt()")
 
 test("CBOR.Map().set(1, CBOR.Array())", null,
-     "Map key 1 with argument Array was not read")
+     "Map key 1 with argument Array was never read")
 
 test("CBOR.Map().set(1, CBOR.Array())", "get(1)")
 
@@ -259,7 +259,7 @@ test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Int(6)))", "get().get(1).getInt()")
 test("CBOR.Array().add(CBOR.Array())", "get(0)")
 
 test("CBOR.Array().add(CBOR.Array())", null,
-     "Array element of type Array was not read")
+     "Array element of type Array was never read")
 
 test("CBOR.Int(6)", "getInt()")
 

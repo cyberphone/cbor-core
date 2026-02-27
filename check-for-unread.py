@@ -40,7 +40,7 @@ class CBOR:
                 if self._is_primitive(self):
                     problem_item += " with value={}".format(
                         self.value if isinstance(self, CBOR.Int) else self.string)
-                problem_item += " was not read"
+                problem_item += " was never read"
                 if holding_object:
                     if isinstance(holding_object, CBOR.Array):
                         holder = "Array element of type"
@@ -129,7 +129,7 @@ def test(statement, access, message=None):
         error = repr(e)
         # print(statement + " " + error)
         assert access or fail, statement
-        assert error.find("not read") > 0
+        assert error.find("never read") > 0
     if access:
         try:
             eval("res." + access)
@@ -139,7 +139,7 @@ def test(statement, access, message=None):
             error = repr(e)
             # print(statement + " " + error)
             assert fail, statement
-            assert error.find("not read") > 0
+            assert error.find("never read") > 0
     if message is not None and (error.find(message) < 0):
         assert False, "not" + repr(message) + error
 
@@ -149,26 +149,26 @@ test("CBOR.Map()", None)
 test("CBOR.Tag(45, CBOR.Map())", "get()")
 
 test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Int(6)))", "get().get(1)",
-     "Map key 1 with argument Int with value=6 was not read")
+     "Map key 1 with argument Int with value=6 was never read")
 
 test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Int(6)))", "get().get(1).get_int()")
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Map()))", "get(0)",
-     "Tagged object 45 of type Map was not read")
+     "Tagged object 45 of type Map was never read")
 
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Map()))", "get(0).get()")
 
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Int(6)))", "get(0).get()",
-     "Tagged object 45 of type Int with value=6 was not read")
+     "Tagged object 45 of type Int with value=6 was never read")
 
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Int(6)))", "get(0).get().get_int()")
 
 test("CBOR.Array().add(CBOR.String('Hi!'))", "get(0)",
-     "Array element of type String with value=Hi! was not read")
+     "Array element of type String with value=Hi! was never read")
 
 test("CBOR.Array().add(CBOR.Int(6))", "get(0).get_int()")
 
 test("CBOR.Map().set(1, CBOR.Array())", None,
-     "Map key 1 with argument Array was not read")
+     "Map key 1 with argument Array was never read")
 
 test("CBOR.Map().set(1, CBOR.Array())", "get(1)")
 
@@ -177,7 +177,7 @@ test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Int(6)))", "get().get(1).get_int()")
 test("CBOR.Array().add(CBOR.Array())", "get(0)")
 
 test("CBOR.Array().add(CBOR.Array())", None,
-     "Array element of type Array was not read")
+     "Array element of type Array was never read")
 
 test("CBOR.Int(6)", "get_int()")
 
