@@ -24,7 +24,7 @@ class CBOR {
         // Common methods
         checkForUnread() {
             this._markAsRead(this);
-            this.#traverse(null);
+            this.#traverse(null, null);
         }
 
         // Private methods
@@ -39,20 +39,20 @@ class CBOR {
             return this instanceof CBOR.Int || this instanceof CBOR.String;
         }
 
-        #traverse(holding_object) {
+        #traverse(holding_object, map_key) {
             switch (this.constructor.name) {
                 case "Map":
                     this._entries.forEach(entry => {
-                        entry.value.#traverse(entry.key);
+                        entry.value.#traverse(this, entry.key);
                     });
                     break;
                 case "Array":
                     this._objects.forEach(object => {
-                         object.#traverse(this);
+                         object.#traverse(this, null);
                     });
                     break;
                 case "Tag":
-                    this._object.#traverse(this);
+                    this._object.#traverse(this, null);
                     break;
             }
             if (!this._readFlag) {
@@ -68,7 +68,7 @@ class CBOR {
                     } else if (holding_object instanceof CBOR.Tag) {
                         holder = "Tagged object " + holding_object._tag_number + " of type";
                     } else {
-                        holder = "Map key " + holding_object + " with argument";
+                        holder = "Map key " + map_key + " with argument";
                     }
                     problem_item = holder + " " + problem_item;
                 }

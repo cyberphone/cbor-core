@@ -17,7 +17,7 @@ class CBOR:
         def check_for_unread(self):
             # Top-level Array, Map, and Tag container object marked as read.
             self._mark_as_read(self)
-            self._traverse(None)
+            self._traverse(None, None)
 
         # Private methods
         def _mark_as_read(self, object):
@@ -28,14 +28,15 @@ class CBOR:
         def _is_primitive(self):
             return isinstance(self, CBOR.Int) or isinstance(self, CBOR.String)
 
-        def _traverse(self, holding_object):
+        def _traverse(self, holding_object, map_key):
             match type(self).__name__:
                 case "Map":
-                    for entry in self._entries: entry.value._traverse(entry.key)
+                    for entry in self._entries: 
+                        entry.value._traverse(self, entry.key)
                 case "Array":
-                    for object in self._objects: object._traverse(self)
+                    for object in self._objects: object._traverse(self, None)
                 case "Tag":
-                    self._object._traverse(self)
+                    self._object._traverse(self, None)
             if not self._read_flag:
                 problem_item = type(self).__name__
                 if self._is_primitive():
@@ -49,7 +50,7 @@ class CBOR:
                         holder = "Tagged object {} of type".format(
                             holding_object._tag_number)
                     else:
-                        holder = "Map key {} with argument".format(holding_object)
+                        holder = "Map key {} with argument".format(map_key)
                     problem_item = holder + " " + problem_item
                 CBOR._error(problem_item)
 
