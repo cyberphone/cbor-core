@@ -39,7 +39,7 @@ class CBOR {
             return this instanceof CBOR.Int || this instanceof CBOR.String;
         }
 
-        #traverse(holding_object, map_key) {
+        #traverse(holdingObject, map_key) {
             switch (this.constructor.name) {
                 case "Map":
                     this._entries.forEach(entry => {
@@ -56,23 +56,23 @@ class CBOR {
                     break;
             }
             if (!this._readFlag) {
-                let problem_item = this.constructor.name;
+                let problemItem = this.constructor.name;
                 if (this.#isPrimitive()) { 
-                    problem_item += " with value=" + this.value;
+                    problemItem += " with value=" + this.value;
                 }
-                problem_item += " was never read";
+                problemItem += " was never read";
                 let holder;
-                if (holding_object) {
-                    if (holding_object instanceof CBOR.Array) {
+                if (holdingObject) {
+                    if (holdingObject instanceof CBOR.Array) {
                         holder = "Array element of type";
-                    } else if (holding_object instanceof CBOR.Tag) {
-                        holder = "Tagged object " + holding_object._tag_number + " of type";
+                    } else if (holdingObject instanceof CBOR.Tag) {
+                        holder = "Tagged object " + holdingObject._tag_number + " of type";
                     } else {
                         holder = "Map key " + map_key + " with argument";
                     }
-                    problem_item = holder + " " + problem_item;
+                    problemItem = holder + " " + problemItem;
                 }
-                CBOR.#error(problem_item);
+                CBOR.#error(problemItem);
             }
         }
     }
