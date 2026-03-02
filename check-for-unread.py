@@ -139,11 +139,10 @@ def test(statement, access, message=None):
             assert not fail, statement
         except Exception as e:
             error = repr(e)
-            # print(statement + " " + error)
+            # print(statement + " " + error) 
             assert fail, statement
             assert error.find("never read") > 0
-    if message is not None and (error.find(message) < 0):
-        assert False, "not" + repr(message) + error
+    assert not fail or (error.find(message) >= 0), repr(message) + error
 
 
 test("CBOR.Array()", None)
