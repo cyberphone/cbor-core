@@ -105,10 +105,11 @@ in the [Encoding&nbsp;Example](#encoding) were swapped, the generated CBOR would
 |-|-|
 |JDK&nbsp;21+|https://github.com/cyberphone/openkeystore|
 |Android/Java|https://github.com/cyberphone/android-cbor|
-|JavaScript|https://github.com/cyberphone/CBOR.js#cborjs|
-|Python 3|https://github.com/cyberphone/CBOR.py#cborpy|
+|JavaScript|https://github.com/cyberphone/CBOR.js#main|
+|Python 3|https://github.com/cyberphone/CBOR.py#main|
 
-Updated: 2026-02-22
+Updated: 2026-03-02
+
 
 
 
