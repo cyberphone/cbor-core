@@ -67,7 +67,7 @@ class CBOR {
                     if (holdingObject instanceof CBOR.Array) {
                         holder = "Array element of type";
                     } else if (holdingObject instanceof CBOR.Tag) {
-                        holder = "Tagged object " + holdingObject._tag_number + " of type";
+                        holder = "Tag object " + holdingObject._tag_number + " of type";
                     } else {
                         holder = "Map key " + mapKey + " with argument";
                     }
@@ -234,12 +234,12 @@ test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Int(6)))", "get().get(1)",
 
 test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Int(6)))", "get().get(1).getInt()")
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Map()))", "get(0)",
-     "Tagged object 45 of type Map was never read")
+     "Tag object 45 of type Map was never read")
 
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Map()))", "get(0).get()")
 
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Int(6)))", "get(0).get()",
-     "Tagged object 45 of type Int with value=6 was never read")
+     "Tag object 45 of type Int with value=6 was never read")
 
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Int(6)))", "get(0).get().getInt()")
 

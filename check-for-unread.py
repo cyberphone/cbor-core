@@ -47,7 +47,7 @@ class CBOR:
                     if isinstance(holding_object, CBOR.Array):
                         holder = "Array element of type"
                     elif isinstance(holding_object, CBOR.Tag):
-                        holder = "Tagged object {} of type".format(
+                        holder = "Tag object {} of type".format(
                             holding_object._tag_number)
                     else:
                         holder = "Map key {} with argument".format(map_key)
@@ -154,12 +154,12 @@ test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Int(6)))", "get().get(1)",
 
 test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Int(6)))", "get().get(1).get_int()")
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Map()))", "get(0)",
-     "Tagged object 45 of type Map was never read")
+     "Tag object 45 of type Map was never read")
 
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Map()))", "get(0).get()")
 
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Int(6)))", "get(0).get()",
-     "Tagged object 45 of type Int with value=6 was never read")
+     "Tag object 45 of type Int with value=6 was never read")
 
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Int(6)))", "get(0).get().get_int()")
 
