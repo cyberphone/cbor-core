@@ -65,15 +65,14 @@ class CBOR {
                 let holder;
                 if (holdingObject) {
                     if (holdingObject instanceof CBOR.Array) {
-                        holder = "Array element of type";
+                        holder = "Array element of type ";
                     } else if (holdingObject instanceof CBOR.Tag) {
-                        holder = "Tag object " + holdingObject._tag_number + " of type";
+                        holder = `Tag object ${holdingObject._tag_number} of type `;
                     } else {
-                        holder = "Map key " + mapKey + " with argument";
+                        holder = `Map key ${mapKey} with argument `;
                     }
-                    problemItem = holder + " " + problemItem;
-                }
-                CBOR.#error(problemItem);
+                } else holder = "";
+                CBOR.#error(holder +  problemItem);
             }
         }
     }
@@ -96,7 +95,7 @@ class CBOR {
                     return this._markAsRead(this._entries[i].value);
                 }
             }
-            CBOR.#error("Key " + key + " not found");
+            CBOR.#error(`Key ${key} not found`);
         }
 
         static Entry = class {
@@ -168,14 +167,13 @@ class CBOR {
 
         apply(target, thisArg, argumentsList) {
             if (argumentsList.length != this.numberOfArguments) {
-                CBOR.#error("CBOR." + target.name + " expects " + 
-                    this.numberOfArguments + " argument(s)");
+                CBOR.#error(`CBOR.${target.name} expects ${this.numberOfArguments} argument(s)`);
             }
             return new target(...argumentsList);
         }
 
         construct(target, args) {
-            CBOR.#error("CBOR." + target.name + " does not permit \"new\"");
+            CBOR.#error(`CBOR.${target.name} does not permit "new"`);
         }
     }
 
@@ -212,12 +210,12 @@ function test(statement, access, message) {
     }
     if (access) {
         try {
-            eval("res." + access)
+            eval("res." + access);
             res.checkForUnread();
             assertTrue(!fail, statement);
         } catch (e) {
             error = e.toString();
-            // console.log(statement + " " + error)
+            // console.log(statement + " " + error);
             assertTrue(fail, statement);
             assertTrue(error.includes("never read"));
         }
@@ -225,46 +223,48 @@ function test(statement, access, message) {
     assertTrue(!fail || error.includes(message), message + error);
 }
 
-test("CBOR.Array()", null)
-test("CBOR.Map()", null)
-test("CBOR.Tag(45, CBOR.Map())", "get()")
+test("CBOR.Array()", null);
+test("CBOR.Map()", null);
+test("CBOR.Tag(45, CBOR.Map())", "get()");
 
 test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Int(6)))", "get().get(1)",
-     "Map key 1 with argument Int with value=6 was never read")
+     "Map key 1 with argument Int with value=6 was never read");
 
-test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Int(6)))", "get().get(1).getInt()")
+test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Int(6)))", "get().get(1).getInt()");
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Map()))", "get(0)",
-     "Tag object 45 of type Map was never read")
+     "Tag object 45 of type Map was never read");
 
-test("CBOR.Array().add(CBOR.Tag(45, CBOR.Map()))", "get(0).get()")
+test("CBOR.Array().add(CBOR.Tag(45, CBOR.Map()))", "get(0).get()");
 
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Int(6)))", "get(0).get()",
-     "Tag object 45 of type Int with value=6 was never read")
+     "Tag object 45 of type Int with value=6 was never read");
 
-test("CBOR.Array().add(CBOR.Tag(45, CBOR.Int(6)))", "get(0).get().getInt()")
+test("CBOR.Array().add(CBOR.Tag(45, CBOR.Int(6)))", "get(0).get().getInt()");
 
 test("CBOR.Array().add(CBOR.String('Hi!'))", "get(0)",
-     "Array element of type String with value=Hi! was never read")
+     "Array element of type String with value=Hi! was never read");
 
-test("CBOR.Array().add(CBOR.Int(6))", "get(0).getInt()")
+test("CBOR.Array().add(CBOR.Int(6))", "get(0).getInt()");
 
 test("CBOR.Map().set(1, CBOR.Array())", null,
-     "Map key 1 with argument Array was never read")
+     "Map key 1 with argument Array was never read");
 
-test("CBOR.Map().set(1, CBOR.Array())", "get(1)")
+test("CBOR.Map().set(1, CBOR.Array())", "get(1)");
 
-test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Int(6)))", "get().get(1).getInt()")
+test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Int(6)))", "get().get(1).getInt()");
 
-test("CBOR.Array().add(CBOR.Array())", "get(0)")
+test("CBOR.Array().add(CBOR.Array())", "get(0)");
 
 test("CBOR.Array().add(CBOR.Array())", null,
-     "Array element of type Array was never read")
+     "Array element of type Array was never read");
 
-test("CBOR.Int(6)", "getInt()")
+test("CBOR.Int(6)", "getInt()");
+test("CBOR.Int(6)", null,
+     "Int with value=6 was never read");
 
 // a slightly more elaborate example
-res = CBOR.Map().set(2, CBOR.Array()).set(1, CBOR.String("Hi!"))
-res.get(2).add(CBOR.Int(700))
-assertTrue(res.get(2).get(0).getInt() == 700)
-assertTrue(res.get(1).getString() == "Hi!")
-res.checkForUnread() // all is good
+res = CBOR.Map().set(2, CBOR.Array()).set(1, CBOR.String("Hi!"));
+res.get(2).add(CBOR.Int(700));
+assertTrue(res.get(2).get(0).getInt() == 700);
+assertTrue(res.get(1).getString() == "Hi!");
+res.checkForUnread(); // all is good
