@@ -78,7 +78,7 @@ let cbor = CBOR.fromDiagnostic(`{
   2: "Hi there!"
 }`).encode();
 
-console.log(CBOR.toHex(cbor));
+console.log(cbor.toHex());
 ------------------------------
 a201fb4046d9999999999a0269486920746865726521
 ```
