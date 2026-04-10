@@ -41,7 +41,7 @@ let cbor = CBOR.Map()
                .set(TEMPERATURE_KEY, CBOR.Float(45.7))
                .set(GREETINGS_KEY, CBOR.String("Hi there!")).encode();
 
-console.log(CBOR.toHex(cbor));
+console.log(cbor.toHex());
 ------------------------------
 a201fb4046d9999999999a0269486920746865726521
 ```
@@ -108,7 +108,7 @@ in the [Encoding&nbsp;Example](#encoding) were swapped, the generated CBOR would
 |JavaScript|https://github.com/cyberphone/CBOR.js#main|
 |Python 3|https://github.com/cyberphone/CBOR.py#main|
 
-Updated: 2026-03-02
+Updated: 2026-04-10
 
 
 
