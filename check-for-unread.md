@@ -21,15 +21,13 @@ class CBOR:
         return value
 
     class CborObject(object):
+        def __init__(self):
+            self.read_flag = False
 
         # Public methods
         def check_for_unread(self):
             self._mark_as_read(self)
             self._traverse(None)
-
-        # Constructor
-        def __init__(self):
-            self.read_flag = False
 
         # Private methods
         def _mark_as_read(self, object):
@@ -150,26 +148,26 @@ test("CBOR.Map()", None)
 test("CBOR.Tag(45, CBOR.Map())", "get()")
 
 test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Primitive(6)))", "get().get(1)",
-     'Map key 1 with argument Primitive with value=6 was not read')
+     "Map key 1 with argument Primitive with value=6 was not read")
 
 test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Primitive(6)))", "get().get(1).read_primitive()")
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Map()))", "get(0)",
-     'Tagged object 45 of type Map was not read')
+     "Tagged object 45 of type Map was not read")
 
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Map()))", "get(0).get()")
 
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Primitive(6)))", "get(0).get()",
-     'Tagged object 45 of type Primitive with value=6 was not read')
+     "Tagged object 45 of type Primitive with value=6 was not read")
 
 test("CBOR.Array().add(CBOR.Tag(45, CBOR.Primitive(6)))", "get(0).get().read_primitive()")
 
 test("CBOR.Array().add(CBOR.Primitive(6))", "get(0)",
-     'Array element of type Primitive with value=6 was not read')
+     "Array element of type Primitive with value=6 was not read")
 
 test("CBOR.Array().add(CBOR.Primitive(6))", "get(0).read_primitive()")
 
 test("CBOR.Map().set(1, CBOR.Array())", None,
-     'Map key 1 with argument Array was not read')
+     "Map key 1 with argument Array was not read")
 
 test("CBOR.Map().set(1, CBOR.Array())", "get(1)")
 
@@ -178,7 +176,7 @@ test("CBOR.Tag(45, CBOR.Map().set(1, CBOR.Primitive(6)))", "get().get(1).read_pr
 test("CBOR.Array().add(CBOR.Array())", "get(0)")
 
 test("CBOR.Array().add(CBOR.Array())", None,
-     'Array element of type Array was not read')
+     "Array element of type Array was not read")
 
 test("CBOR.Primitive(6)", "read_primitive()")
 

@@ -62,14 +62,14 @@ function nonFinite2Cbor(value) {
       return cbor;
     }
   // Invalid argument.
-  throw new Error("Invalid non-finite number: " + value);
+  throw new Error(`Invalid non-finite number: ${value}`);
 }
 
 // Input: up to 53 bit payload as a BigInt.
 // Returns: CBOR binary in a Uint8Array.
 function payload2Cbor(payload) {
   if (payload < 0n || payload > 0x1fffffffffffffn) {
-    throw new Error("Invalid payload: " + payload);
+    throw new Error(`Invalid payload: ${payload}`);
   }
   // Catch sign (b52).
   let left64 = (payload & 0x10000000000000n) ?
