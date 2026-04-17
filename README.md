@@ -107,8 +107,9 @@ in the [Encoding&nbsp;Example](#encoding) were swapped, the generated CBOR would
 |Android/Java|https://github.com/cyberphone/android-cbor|
 |JavaScript|https://github.com/cyberphone/CBOR.js#main|
 |Python 3|https://github.com/cyberphone/CBOR.py#main|
+|Rust|https://crates.io/crates/cbor-core|
 
-Updated: 2026-04-10
+Updated: 2026-04-17
 
 
 
