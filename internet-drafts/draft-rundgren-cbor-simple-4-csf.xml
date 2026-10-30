@@ -13,7 +13,7 @@
 <rfc
   xmlns:xi="http://www.w3.org/2001/XInclude"
   category="info"
-  docName="draft-rundgren-cbor-simple-4-csf-01"
+  docName="draft-rundgren-cbor-simple-4-csf-02"
   ipr="trust200902"
   obsoletes=""
   updates=""
@@ -22,9 +22,9 @@
   version="3">
 
   <front>
-    <title>CBOR Simple Value for CSF</title>
+    <title>CBOR "simple" values for CSF</title>
 
-    <seriesInfo name="Internet-Draft" value="draft-rundgren-cbor-simple-4-csf-01"/>
+    <seriesInfo name="Internet-Draft" value="draft-rundgren-cbor-simple-4-csf-02"/>
    
     <author fullname="Anders Rundgren" initials="A." surname="Rundgren" role="editor">
         <organization>Independent</organization>
@@ -38,7 +38,7 @@
         </address>
     </author>
    
-    <date year="2025"/>
+    <date year="2026"/>
 
     <area>Application</area>
     <workgroup>Internet Engineering Task Force</workgroup>
@@ -53,7 +53,8 @@
     <abstract>
       <t>
 This document defines two CBOR "simple" values to be used
-as unique labels in a CBOR map holding an embedded signature.
+as unique (reserved) labels in a CBOR map holding an embedded signature
+construct.
       </t>
     </abstract>
  
@@ -65,13 +66,19 @@ as unique labels in a CBOR map holding an embedded signature.
       <name>Introduction</name>
           <t>
 This document defines two CBOR <xref target="RFC8949"/> "simple" values to be used
-as unique labels in conjunction with an embedded signature <xref target="CSF"/> design.
+as unique (reserved) labels in conjunction with an embedded signature scheme described
+in <eref target="https://www.ietf.org/archive/id/draft-rundgren-cbor-core-25.html#appendix-E">Appendix&nbsp;E</eref> of <tt>CBOR::Core</tt> <xref target="I-D.rundgren-cbor-core"/>,
+from now on referred to as <tt>CSF</tt> (CBOR Signature Format).
+</t>
+<t>
 The purpose of the unique labels
 is to securely decouple application-specific labels from
-the signature container respectively data that should
+the CSF signature container, respectively hold data that should
 be excluded from the signature.
+</t>
+<t>
 In addition to eliminating the need for application-specific
-labels for embedded signatures,
+labels for embedded signature constructs,
 the net result includes simplified signature APIs as well.
         </t>
     </section>
@@ -88,14 +95,14 @@ the net result includes simplified signature APIs as well.
     
     <section anchor="detailed.description">
       <name>Description and Rationale</name>
-      <t>This section describes the problem and its possible solution.</t>
+      <t>This section describes the problem and its solution.</t>
       <t>The CBOR examples are provided in "Extended Diagnostic Notation (EDN)"
       <xref target="I-D.ietf-cbor-edn-literals"/>.</t>
 
-      <section anchor="current">
-        <name>Current Solution</name>
-        <t>The <xref target="CSF"/> embedded signature scheme currently depends
-        on an application-specific label holding the embedded signature container.</t>
+      <section anchor="previous">
+        <name>Initial (Now Deprecated) Solution</name>
+        <t>In the original take on the <tt>CSF</tt> embedded signature scheme,
+        an application-specific label held the embedded signature container.</t>
         <t>The following CBOR code shows a very simple example using an HMAC signature:</t>
 <sourcecode name="current.solution" type="cbor">
 <![CDATA[{
@@ -114,10 +121,10 @@ the net result includes simplified signature APIs as well.
       </section>
 
      <section anchor="using.simple">
-        <name>Enhanced Solution</name>
-        <t>Replacing the application-specific
-        label with a CBOR <tt>simple</tt> value,
-        yields the following:</t>
+        <name>Enhanced (Current) Solution</name>
+        <t>In the following sample (copied from <xref target="I-D.rundgren-cbor-core"/>),
+        a CBOR <tt>simple(99)</tt> value is used as a
+        reserved label for the embedded signature container:</t>
 <sourcecode name="improved.solution" type="cbor">
 <![CDATA[{
   1: "data",         # Application data
@@ -125,22 +132,42 @@ the net result includes simplified signature APIs as well.
   simple(99): {      # Embedded signature (CSF container)
     1: 5,
     6: h'237e674c7be1818ddd7eaacf40ca80415b9ad816880751d2136c45385207420c'
-  },
-  simple(100): [     # Optional: data that should NOT be signed
-    "just passing through"
-  ]
+  }
 }]]></sourcecode>
         <t>The advantages with using <tt>simple(99)</tt> include:</t>
         <ul>
         <li>Eliminates the need for application-specific labels for signature containers.</li>
         <li>Simplifies signature APIs:<tt>&nbsp;sign(</tt><em>applicationMap</em><tt>)</tt>.</li>
-        <li>Using deterministic encoding (a <xref target="CSF"/> prerequisite),
+        <li>Using deterministic encoding (a <tt>CSF</tt> prerequisite),
         CBOR simple types lexicographically follow after other CBOR elements
-        (of the type normally used as labels).
+        (of the kind normally used as labels).
         This makes sense for embedded signatures,
         since they usually "attest" the application data that is
         (list-wise), situated above the signature container, like in the example.</li>
+        <li>
+        <xref target="constrained"/> shows an additional feature accomplished
+        by this arrangement.
+        </li>
         </ul>
+      </section>
+
+      <section anchor="unsigned.data">
+        <name>Unsigned Data Option</name>
+        <t>In use-cases like when issuing selectable disclosures
+        (e.g. as in <eref target="https://cyberphone.github.io/sd-experimental/doc/#issued-sd-cwt"/>),
+        it may be advantageous being able to carry unsigned data together with
+        signed data, as an alternative to a more elaborate construct.
+        For this purpose, the reserved CBOR <tt>simple(100)</tt> label was introduced:</t>
+<sourcecode name="unsigned.solution" type="cbor">
+<![CDATA[{
+  1: "data",         # Application data
+  2: "more data",    # Application data
+  simple(99): {      # Embedded signature (CSF container)
+    1: 5,
+    6: h'237e674c7be1818ddd7eaacf40ca80415b9ad816880751d2136c45385207420c'
+  },
+  simple(100): "just passing through..."
+}]]></sourcecode>
       </section>
       
    </section>
@@ -163,12 +190,12 @@ the net result includes simplified signature APIs as well.
           <tbody>
             <tr>
               <td align="center">99</td>
-              <td>Unique label</td>
+              <td>Unique (reserved) label</td>
               <td>draft-rundgren-cbor-simple-4-csf-XX</td>
             </tr>
               <tr>
               <td align="center">100</td>
-              <td>Unique label</td>
+              <td>Unique (reserved) label</td>
               <td>draft-rundgren-cbor-simple-4-csf-XX</td>
             </tr>
           </tbody>
@@ -178,10 +205,8 @@ the net result includes simplified signature APIs as well.
     <section anchor="Security">
        <name>Security Considerations</name>
 <t>
-The proposed enhanced solution does not reduce security compared
-to the current solution because
-duplicate labels SHOULD in both cases be rejected by conforming
-CBOR encoders and decoders.
+An "alternative" use of the "simple" values defined herein, could in a marginal
+implementation introduce security issues.
 </t>
     </section>
     
@@ -195,7 +220,6 @@ CBOR encoders and decoders.
         <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.2119.xml"/>
         <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8174.xml"/>
         <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8949.xml"/>
-        <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8610.xml"/>
         <reference anchor="IANA.cbor-simple-values" target="https://www.iana.org/assignments/cbor-simple-values">
             <front>
               <title>Concise Binary Object Representation (CBOR) Simple Values</title>
@@ -208,22 +232,18 @@ CBOR encoders and decoders.
  
       <references>
         <name>Informative References</name>
-          <reference anchor="I-D.ietf-cbor-edn-literals" target="https://datatracker.ietf.org/doc/html/draft-ietf-cbor-edn-literals-16">
+          <reference anchor="I-D.ietf-cbor-edn-literals" target="https://datatracker.ietf.org/doc/html/draft-ietf-cbor-edn-literals-18">
             <front>
             <title>CBOR Extended Diagnostic Notation (EDN)</title>
             <author initials="C." surname="Bormann" fullname="Carsten Bormann">
             <organization>Universität Bremen TZI</organization>
             </author>
-            <date month="January" day="8" year="2025"/>
-            <abstract>
-            <t> This document formalizes and consolidates the definition of the Extended Diagnostic Notation (EDN) of the Concise Binary Object Representation (CBOR), addressing implementer experience. Replacing EDN's previous informal descriptions, it updates RFC 8949, obsoleting its Section 8, and RFC 8610, obsoleting its Appendix G. It also specifies and uses registry-based extension points, using one to support text representations of epoch-based dates/times and of IP addresses and prefixes. // (This cref will be removed by the RFC editor:) The present // revision (–16) addresses the first half of the WGLC comments, // except for the issues around the specific way how to best achieve // pluggable ABNF grammars for application-extensions. It is // intended for use as a reference document for the mid-WGLC CBOR WG // interim meeting on 2025-01-08. </t>
-            </abstract>
             </front>
-            <seriesInfo name="Internet-Draft" value="draft-ietf-cbor-edn-literals-16"/>
+            <seriesInfo name="Internet-Draft" value="draft-ietf-cbor-edn-literals-28"/>
         </reference>
-        <reference anchor="CSF" target="https://cyberphone.github.io/javaapi/org/webpki/cbor/doc-files/signatures.html">
+        <reference anchor="I-D.rundgren-cbor-core" target="https://www.ietf.org/archive/id/draft-rundgren-cbor-core-25.html">
           <front>
-            <title>CBOR Signature Format (CSF)</title>
+            <title>CBOR::Core - CBOR Cross Platform Profile</title>
             <author initials="A" surname="Rundgren">
               <organization/>
             </author>
@@ -232,18 +252,268 @@ CBOR encoders and decoders.
       </references>
     </references>
 
+    <section anchor="constrained">
+      <name>Constrained System CSF Verifier</name>
+      <t>
+      The following C sample code shows how the use of <tt>simple(99)</tt>,
+      due to the deterministic coding rules,
+      makes the actual signature value appear as the last item in a CSF-signed object.
+      </t>
+      <t>
+      This arrangement enables embedded signatures
+      based on the CSF scheme, to be applied to quite primitive systems,
+      with moderate additional resource requirements.
+      </t>
+      <t>
+      Note: this is a low-level solution, relying on the assumption that
+      floating-point numbers are not used as labels, since such labels
+      would appear <em>after</em> the <tt>simple(99)</tt> label.
+      </t>
+      <sourcecode type="c">
+<![CDATA[#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include "../lib/hmac_sha256.h"
+
+/*
+    Decode and verify the integrity of this minimal sample using 
+    CBOR Signature Format (CSF).
+
+    Sample expressed in diagnostic notation:
+
+        {
+          1: "data",
+          2: "more data",
+          simple(99): {
+            1: 5,
+            6: h'237e674c7be1818ddd7eaacf40ca80415b9ad816880751d2136c45385207420c'
+          }
+        }
+
+*/
+
+uint8_t buffer[] = {  // Corresponding CBOR binary
+    0xa3, 0x01, 0x64, 0x64, 0x61, 0x74, 0x61, 0x02, 0x69, 0x6d, 0x6f, 0x72, 
+    0x65, 0x20, 0x64, 0x61, 0x74, 0x61, 0xf8, 0x63, 0xa2, 0x01, 0x05, 0x06,
+    0x58, 0x20, 0x23, 0x7e, 0x67, 0x4c, 0x7b, 0xe1, 0x81, 0x8d, 0xdd, 0x7e,
+    0xaa, 0xcf, 0x40, 0xca, 0x80, 0x41, 0x5b, 0x9a, 0xd8, 0x16, 0x88, 0x07,
+    0x51, 0xd2, 0x13, 0x6c, 0x45, 0x38, 0x52, 0x07, 0x42, 0x0c };
+
+const uint8_t HMAC_KEY[] = {
+    0x7f, 0xdd, 0x85, 0x1a, 0x3b, 0x9d, 0x2d, 0xaf, 0xc5, 0xf0, 0xd0, 0x00,
+    0x30, 0xe2, 0x2b, 0x93, 0x43, 0x90, 0x0c, 0xd4, 0x2e, 0xde, 0x49, 0x48,
+    0x56, 0x8a, 0x4a, 0x2e, 0xe6, 0x55, 0x29, 0x1a };
+
+#define COSE_HS256_ALG 5
+#define COSE_HS256_LEN 32
+
+int bufferPosition;
+
+void failedOperation(char *message, ...) {
+    va_list args;
+    printf("\n*** ");
+    va_start(args, message);
+    vprintf(message, args);
+    va_end(args);
+    printf(" (bufferPosition = %d)\n\n", bufferPosition);
+    exit(1);
+}
+
+void initiate() {
+    bufferPosition = 0;
+}
+
+void terminate() {
+    if (bufferPosition < sizeof(buffer)) {
+        failedOperation("Unread buffer data");
+    }
+}
+
+uint8_t _getByte() {
+    if (bufferPosition >= sizeof(buffer)) {
+        failedOperation("Buffer overflow");
+    }
+    return buffer[bufferPosition++];
+}
+
+int32_t _getLength(uint8_t header) {
+    int32_t length = header & 0x1f;
+    if (length >= 24) switch (length) {
+        default:
+            failedOperation("Unsupported or invalid length: 0x%02x", length);
+        case 24:
+        case 25:
+        case 26:
+            {
+                int32_t q = 1 << (length - 24);
+                int32_t leadingZeroMask = 0xffff << (q * 4);
+                length = 0;
+                while (q--) {
+                    length <<= 8;
+                    length += _getByte();
+                }
+                if (length & 0x80000000) {
+                    failedOperation("Int32 value out of range");
+                }
+                if (!(length & leadingZeroMask) || length < 24) {
+                    failedOperation("Non-deterministically encoded integer");
+                }
+            }
+    }
+    return length;
+}
+
+int32_t getInt32() {
+    uint8_t header = _getByte();
+    if (header & 0xc0) {
+        failedOperation("Expected integer");
+    }
+    int32_t value = _getLength(header);
+    return header < 0x20 ? value : ~value;
+}
+
+void getSimple(uint8_t value) {
+    if (_getByte() != 0xf8 || _getByte() != value) {
+        failedOperation("Expected simple(%d)", value);
+    }
+}
+
+void getKey(int32_t key) {
+    if (key != getInt32()) {
+        failedOperation("Expected key: %d", key);
+    }
+}
+
+int32_t getMap(int32_t elements) {
+    int32_t savePos = bufferPosition;
+    uint8_t header = _getByte();
+    if ((header & 0xe0) != 0xa0 || elements != _getLength(header)) {
+        failedOperation("Expected map with %d elements", elements);
+    }
+    return savePos; 
+}
+
+typedef struct {
+    int length;
+    uint8_t* bytes;
+} STRING;
+
+void _getString(uint8_t majorType, STRING* string) {
+    uint8_t header = _getByte();
+    if ((header & 0xe0) != majorType) {
+        failedOperation("Expected string type");
+    }
+    int32_t length = _getLength(header);
+    string->length = length;
+    string->bytes = &buffer[bufferPosition];
+    while (length--) {
+        _getByte();  // Scan away, but check for overrun!
+    }
+}
+
+void getTstr(STRING* string) {
+    _getString(0x60, string);
+}
+
+void getBstr(STRING* string) {
+    _getString(0x40, string);
+}
+
+void debugPrint(STRING* data, bool hex, char* description) {
+    printf("%s: ", description);
+    for (int i = 0; i < data->length; ) {
+        printf(hex ? "%02x" : "%c", data->bytes[i++]);
+    }
+    printf("\n");
+}
+
+int main(int argc, char **args) {
+    initiate();
+
+    getMap(3);  // Top-level map
+    
+        getKey(1);
+        STRING firstArgument;
+        getTstr(&firstArgument);
+
+        getKey(2);
+        STRING secondArgument;
+        getTstr(&secondArgument);
+
+        getSimple(99);  // CSF object label
+
+            // Read and verify the size of the CSF map.
+            //
+            // Then decrement CSF map size by one since
+            // signatureValue is not a part of signedData.
+            //
+            // This is the opposite to what happens during signature
+            // creation, where signatureValue is the final element
+            // added and thus increases the CSF map size with one
+            // in order to maintain a valid CSF container.
+            buffer[getMap(2)]--;
+
+                getKey(1);  // CSF algorithm label
+                int32_t algorithm = getInt32();
+
+                // signedData constitutes of the following CBOR data:
+                // 
+                //  {
+                //    1: "data",
+                //    2: "more data",
+                //    simple(99): {
+                //      1: 5
+                //    }
+                //  }
+                // 
+                STRING signedData;
+                signedData.length = bufferPosition;
+                signedData.bytes = buffer;
+
+                getKey(6); // CSF signatureValue label
+                STRING signatureValue;
+                getBstr(&signatureValue);
+
+    terminate();
+
+    // Sample passed format verification. Print read data.
+    debugPrint(&firstArgument, false, "First argument");
+    debugPrint(&secondArgument, false, "Second argument");
+    debugPrint(&signedData, true, "Signed data");
+    printf("Algorithm: %d (COSE HS256)\n", algorithm);
+    debugPrint(&signatureValue, true, "Signature value");
+
+    // Finally, signature validation.
+    if (algorithm != COSE_HS256_ALG || signatureValue.length != COSE_HS256_LEN) {
+        failedOperation("Error in algorithm or signatureValue.length");
+    }
+    uint8_t out[COSE_HS256_LEN];
+    size_t hmac = hmac_sha256(HMAC_KEY, sizeof(HMAC_KEY), 
+                              signedData.bytes, signedData.length, 
+                              out, COSE_HS256_LEN);
+    if (hmac != COSE_HS256_LEN || memcmp(out, signatureValue.bytes, COSE_HS256_LEN)) {
+        failedOperation("Signature validation failed");
+    }
+    printf("\nSample validated!!!\n");
+}]]>
+      </sourcecode>
+      <t>
+      Complete source code and documention is available at
+      <eref target="https://github.com/cyberphone/ultra-simple-csf-sample"/>.
+      </t>
+    </section>
+
     <section anchor="DocHistory" numbered="false">
       <name>Document History</name>
       <ul>
         <li>00. First cut.</li>
-        <li>01. simple(100) added.</li>
+        <li>01. Added simple(100).</li>
+        <li>02. Referenced CBOR::Core rather than the Java CSF implementation.</li>
       </ul>
 
-    </section>
-
-    <section anchor="Acknowledgements" numbered="false">
-      <name>Acknowledgements</name>
-<t>TBD</t>
     </section>
     
  </back>
