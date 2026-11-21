@@ -26,10 +26,10 @@ The `CBOR::Core` API supports the following primitives:
 
 |Primitive|Variants|
 |-|-|
-|Fixed-size integers|`Int8`, `Uint8`, `Int16`, `Uint16`, `Int32`, `Uint32`, `Int64`, `Uint64`, `Int128`, `Uint128` |
+|Fixed-size integer|`Int8`, `Uint8`, `Int16`, `Uint16`, `Int32`, `Uint32`, `Int64`, `Uint64`, `Int128`, `Uint128` |
 |Big integer|Unlimited-size integers|
 |Floating point|`Float16`, `Float32`, `Float64`|
-|Booleans|`True` and `False`|
+|Boolean|`True` and `False`|
 |Textual data|UTF8-encoded strings|
 |Binary data|Byte-strings|
 
