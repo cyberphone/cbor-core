@@ -12,13 +12,29 @@ This repository contains resources associated with the `CBOR::Core` project.
 
 The purpose of `CBOR::Core` is providing a specification that
 can be supported by quite different platforms, while maintaining a high level of interoperability,
-including with respect to API.
+including with respect to an API that is underpinning `CBOR::Core`.
 `CBOR::Core` has also been described as "a better JSON" 😊
 
 Interoperability is achieved by:
 - Compatibility with the CBOR base specification: [RFC 8949](https://www.rfc-editor.org/rfc/rfc8949.html)
 - Deterministic _encoding_, while optionally offering _decoding_ support for "legacy" CBOR
 - Strict _type-checking_ at the API level as well as by the decoding process
+
+## Data Types
+
+The `CBOR::Core` API supports the following primitives:
+
+|Primitive|Variants|
+|-|-|
+|Fixed-size integers|`Int8`, `Uint8`, `Int16`, `Uint16`, `Int32`, `Uint32`, `Int64`, `Uint64` |
+|Big integer|Unlimited-size integers|
+|Floating point|`Float16`, `Float32`, `Float64`|
+|Booleans|`True` and `False`|
+|Textual data|UTF8-encoded strings|
+|Binary data|Byte-strings|
+
+In addition to _arrays_ (`[]`) and _maps_ (`{}`), the `CBOR::Core` API also supports
+CBOR date-time tyoes, CBOR `null`, arbitrary CBOR "tags", and CBOR `simple`.
 
 ## Current Draft
 
@@ -109,7 +125,7 @@ in the [Encoding&nbsp;Example](#encoding) were swapped, the generated CBOR would
 |Python 3|https://github.com/cyberphone/CBOR.py#main|
 |Rust|https://crates.io/crates/cbor-core|
 
-Updated: 2026-04-17
+Updated: 2026-11-21
 
 
 
