@@ -36,15 +36,10 @@ The `CBOR::Core` API supports the following primitives:
 In addition to _arrays_ `[]` and _maps_ `{}`, the `CBOR::Core` API also supports
 CBOR date-time types, CBOR `null`, arbitrary CBOR "tags", and CBOR `simple`.
 
-## Current Draft
-
-The most recent draft can be found at:
-https://datatracker.ietf.org/doc/draft-rundgren-cbor-core/
-
 ## Examples
 
-The following _simple_ examples are intended to illustrate how `CBOR::Core` can be used.
-Although the examples build on a specific JavaScript solution,
+The following _simple_ examples are intended to illustrate how the `CBOR::Core` API can be used.
+Although the examples build on a specific JavaScript implementation,
 other implementations are supposed to be quite similar with respect to usage.
 
 ### Encoding
@@ -114,6 +109,11 @@ conforming `CBOR::Core` implementations perform
 all necessary transformations _automagically_.  This for example means that if the 
 `set()` operations
 in the [Encoding&nbsp;Example](#encoding) were swapped, the generated CBOR would remain the same.
+
+## Current Draft
+
+The most recent draft can be found at:
+https://datatracker.ietf.org/doc/draft-rundgren-cbor-core/
 
 ## Known CBOR::Core Implementations
 
