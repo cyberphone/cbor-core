@@ -26,15 +26,15 @@ The `CBOR::Core` API supports the following primitives:
 
 |Primitive|Variants|
 |-|-|
-|Fixed-size integer|`Int8`, `Uint8`, `Int16`, `Uint16`, `Int32`, `Uint32`, `Int64`, `Uint64`, `Int128`, `Uint128` |
-|Big integer|Unlimited-size integers|
-|Floating point|`Float16`, `Float32`, `Float64`|
-|Boolean|`True` and `False`|
-|Textual data|UTF8-encoded strings|
-|Binary data|Byte-strings|
+|Fixed-size integers|`Int8`, `Uint8`, `Int16`, `Uint16`, `Int32`, `Uint32`, `Int64`, `Uint64`, `Int128`, `Uint128` |
+|Unlimited-size integers|`BigInt`|
+|Floating-point values|`Float16`, `Float32`, `Float64`|
+|Booleans|`True`, `False`|
+|Text-strings|`String`|
+|Byte-strings|`Bytes`|
 
 In addition to _arrays_ `[]` and _maps_ `{}`, the `CBOR::Core` API also supports
-CBOR date-time types, `Ìnt53`, CBOR `null`, arbitrary CBOR "tags", and CBOR `simple`.
+CBOR date-time types, `Ìnt53`, CBOR `Null`, arbitrary CBOR "tags", and CBOR `Simple`.
 
 ## Examples
 
