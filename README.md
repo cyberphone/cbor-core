@@ -33,8 +33,8 @@ The `CBOR::Core` API supports the following primitives:
 |Textual data|UTF8-encoded strings|
 |Binary data|Byte-strings|
 
-In addition to _arrays_ (`[]`) and _maps_ (`{}`), the `CBOR::Core` API also supports
-CBOR date-time tyoes, CBOR `null`, arbitrary CBOR "tags", and CBOR `simple`.
+In addition to _arrays_ `[]` and _maps_ `{}`, the `CBOR::Core` API also supports
+CBOR date-time types, CBOR `null`, arbitrary CBOR "tags", and CBOR `simple`.
 
 ## Current Draft
 
